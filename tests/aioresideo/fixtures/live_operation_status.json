@@ -1,0 +1,9 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "NotificationType": "LiveFeedEvent",
+  "Body": {
+    "PropertyName": "OperationStatus",
+    "Value": { "curStg": 2, "Mode": "Heat", "Fan": false, "CircFan": true }
+  },
+  "TemplateId": "LiveFeedEvent_OperationStatus"
+}

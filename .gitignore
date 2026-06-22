@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
+.idea/
+
+# never commit cached auth tokens
+.tokens.json
+
+# local HA dev instance (config, state, db, logs)
+config/

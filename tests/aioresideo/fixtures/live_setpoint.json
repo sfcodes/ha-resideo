@@ -1,0 +1,18 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "NotificationType": "LiveFeedEvent",
+  "DeviceName": "Master Bedroom",
+  "Body": {
+    "PropertyName": "Setpoint",
+    "Value": {
+      "Status": "PermanentHold",
+      "HeatSetpoint": 64,
+      "CoolSetpoint": 77,
+      "FanSwitch": { "Position": "On" },
+      "Priority": { "PriorityType": "PickARoom", "SelectedRooms": [0, 1] },
+      "DevicePreferredTemperatureUnits": "F"
+    },
+    "SubscriptionExpiration": "2026-06-19T18:38:10+00:00"
+  },
+  "TemplateId": "LiveFeedEvent_Setpoint"
+}

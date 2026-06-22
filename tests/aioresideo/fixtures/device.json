@@ -1,0 +1,167 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "Reported": {
+    "DeviceName": "Master Bedroom",
+    "DataSyncInfo": {
+      "State": "Completed",
+      "TransactionId": "asFfNSe7cxcwvbgr"
+    },
+    "SystemSwitch": "Cool",
+    "HeatCoolMode": "Cool",
+    "Setpoint": {
+      "SetpointStatus": "PermanentHold",
+      "HeatSetpoint": 62.0,
+      "CoolSetpoint": 76.0,
+      "FanSwitch": {
+        "Position": "Auto"
+      }
+    },
+    "DisplayedIndoorTemperature": 76.0,
+    "DisplayedOutdoorTemperature": 82.0,
+    "DisplayedIndoorHumidity": 56,
+    "DisplayedOutdoorHumidity": 67,
+    "FanSwitch": {
+      "Position": "Auto"
+    },
+    "FanReq": 1,
+    "OperationStatus": {
+      "Mode": "Cool",
+      "FanRequest": true,
+      "CirculationFanRequest": false
+    },
+    "HeatAndCoolDemand": {
+      "CurrentStage": 1,
+      "Demand": 68,
+      "Mode": "Cool",
+      "StagesOn": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "FanRequest": true,
+      "CirculationFanRequest": false
+    },
+    "VacationHold": {
+      "Enabled": false
+    },
+    "VentilationTimer": 0,
+    "FeelsLikeEnabled": true,
+    "ActiveAdaptiveRecoveryMode": "AdaptiveIntelligentRecovery",
+    "IsAdaptiveRecoveryActive": false,
+    "ScheduleEnabled": false,
+    "Online": true,
+    "ThermostatFaults": [],
+    "BackLightState": "Active",
+    "CurrentSchedulePeriod": {
+      "Day": "Thursday",
+      "Period": "Away"
+    },
+    "ScheduleType": {
+      "ScheduleType": "Timed",
+      "ScheduleSubtype": "NA"
+    },
+    "DemandResponseState": {
+      "EventId": -1,
+      "AffectedDevices": [
+        "Hvac"
+      ],
+      "IsOptOutable": false,
+      "IsLocallyOptOutable": true,
+      "OptedOut": false,
+      "Phases": [],
+      "CurrentDrEventState": "NotStarted"
+    },
+    "CurrentPriorityType": "PickARoom",
+    "VentilationBoostTimer": 0,
+    "CurrentLanguage": "English",
+    "InbuiltSensorState": {
+      "RoomId": 0,
+      "RoomName": "Master Bedroom"
+    },
+    "RegistrationDate": "2026-06-12T01:23:24.129+00:00",
+    "AirFilterReminders": {
+      "1": {
+        "RemainingDays": 0,
+        "IsAlertRaised": false
+      }
+    },
+    "FanReqReasons": [
+      "HeatingOrCoolingStagesOn"
+    ],
+    "IndoorAirQuality": {
+      "TotalVolatileOrganicCompounds": {
+        "Status": "Ok",
+        "Quality": "VeryGood"
+      },
+      "EstimatedCarbonDioxide": {
+        "Status": "Ok",
+        "Quality": "VeryGood"
+      },
+      "HumidityQuality": "Ideal",
+      "TotalIndoorAirQuality": {
+        "Status": "Ok",
+        "Quality": "VeryGood"
+      }
+    },
+    "FirmwareUpdate": {
+      "JobId": "",
+      "SwPackage": "01.3605.740",
+      "Status": "Success"
+    },
+    "FirmwareSystem": {
+      "SwPackage": "01.3605.740",
+      "ImageStateResponse": {
+        "Status": "Valid",
+        "Reason": "System operating normally"
+      },
+      "LastCheckedResponse": {
+        "Time": "2026-06-18T06:59:36.000+00:00",
+        "Status": "No error"
+      },
+      "LastUpdated": "2026-06-12T01:29:18.000+00:00"
+    },
+    "ZoneData": {
+      "ZoneValues": {},
+      "ZoneAttributes": {},
+      "ZoneSummary": {}
+    },
+    "ZoneAccessories": {
+      "ZoneAccessories": [
+        {
+          "AccessoryIndex": 0,
+          "AccessoryType": "Thermostat",
+          "ConnectionMethod": "WI",
+          "Name": "Thermostat",
+          "Model": "Unknown OS",
+          "SerialNumber": "000000000000",
+          "SoftwareRevision": "01.3605.740",
+          "HardwareRevision": "DENALI_TSTAT-001",
+          "RssiAverage": -59
+        },
+        {
+          "AccessoryIndex": 1,
+          "AccessoryType": "IndoorAirSensor",
+          "ConnectionMethod": "RL",
+          "Name": "Guest Room",
+          "Model": "4354",
+          "SerialNumber": "000000000000",
+          "SoftwareRevision": "2.1.5.0",
+          "HardwareRevision": "tus",
+          "BatteryStatus": "Ok",
+          "RssiAverage": -60
+        }
+      ]
+    }
+  },
+  "Desired": {
+    "ZoneData": {
+      "ZoneValues": {},
+      "ZoneAttributes": {},
+      "ZoneSummary": {}
+    },
+    "ZoneAccessories": {
+      "ZoneAccessories": []
+    }
+  }
+}

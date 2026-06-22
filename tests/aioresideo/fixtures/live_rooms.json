@@ -1,0 +1,21 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "NotificationType": "LiveFeedEvent",
+  "Body": {
+    "PropertyName": "Rooms",
+    "Value": {
+      "PropertyName": "0",
+      "Value": {
+        "Id": 0,
+        "Name": "Master Bedroom",
+        "Type": "Other",
+        "AccessorySource": [0],
+        "AvgTemperature": 79,
+        "AvgHumidity": 49,
+        "OverallMotion": false
+      }
+    },
+    "SubscriptionExpiration": "2026-06-20T15:57:42.470+00:00"
+  },
+  "TemplateId": "LiveFeedEvent_Rooms"
+}

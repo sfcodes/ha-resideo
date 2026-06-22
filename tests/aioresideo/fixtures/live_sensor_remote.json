@@ -1,0 +1,26 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "NotificationType": "LiveFeedEvent",
+  "Body": {
+    "PropertyName": "Sensor",
+    "Value": {
+      "RoomId": 1,
+      "AccessoryId": 1,
+      "AccessoryAttribute": {
+        "Type": "RL",
+        "ConnectionMethod": "RL",
+        "Name": "Guest Room",
+        "SerialNumber": "000000000000"
+      },
+      "AccessoryValue": {
+        "IndoorTemperature": 70,
+        "IndoorHumidity": 60,
+        "OccupancyDet": true,
+        "MotionDet": true,
+        "Status": "Ok",
+        "RssiAverage": -55
+      }
+    }
+  },
+  "TemplateId": "LiveFeedEvent_Sensor"
+}

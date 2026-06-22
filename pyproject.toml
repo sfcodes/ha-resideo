@@ -1,0 +1,24 @@
+# Tooling configuration only.
+# This repository ships as a Home Assistant custom integration (installed via HACS),
+# NOT as a PyPI package — so there is intentionally no [build-system] or [project] table.
+# The API client lives in-tree at custom_components/resideo/aioresideo/ (vendored).
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "RUF"]
+ignore = [
+    "E501",     # long lines tolerated (HA boilerplate runs wide)
+    "RUF012",   # mutable class defaults are idiomatic in HA entity classes
+    "RUF046",   # explicit int() casts kept for clarity
+    "ASYNC109", # client methods intentionally expose timeout parameters
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components", "tests"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

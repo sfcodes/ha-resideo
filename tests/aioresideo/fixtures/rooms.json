@@ -1,0 +1,87 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "GroupId": 0,
+  "GroupName": "default",
+  "Rooms": [
+    {
+      "Id": 0,
+      "Name": "Master Bedroom",
+      "Type": "Other",
+      "OverallMotion": true,
+      "Accessories": [
+        {
+          "AccessoryId": 0,
+          "AccessoryAttribute": {
+            "Type": "Thermostat",
+            "ConnectionMethod": "WI",
+            "Name": "Thermostat",
+            "UserChangeEnable": false,
+            "Model": "Unknown OS",
+            "SerialNumber": "000000000000",
+            "SoftwareRevision": "01.3605.740",
+            "HardwareRevision": "DENALI_TSTAT-001"
+          },
+          "AccessoryValue": {
+            "IndoorHumidity": 55,
+            "MotionDet": true,
+            "OccupancyDet": true,
+            "IndoorTemperature": 76.0,
+            "ExcludeMotion": false,
+            "Status": "Ok",
+            "RssiAverage": -59,
+            "PollutantLevels": [],
+            "TotalVolatileOrganicCompounds": {
+              "Measurement": 5.0,
+              "Displayed": true
+            },
+            "CarbonDioxide": {
+              "Measurement": 425.0,
+              "Displayed": true
+            },
+            "TemperatureActual": 75.133
+          }
+        }
+      ],
+      "AvgTemperature": 76.0,
+      "AvgHumidity": 55.0
+    },
+    {
+      "Id": 1,
+      "Name": "Guest Room",
+      "Type": "Bedroom",
+      "OverallMotion": false,
+      "Accessories": [
+        {
+          "AccessoryId": 1,
+          "AccessoryAttribute": {
+            "Type": "IndoorAirSensor",
+            "ConnectionMethod": "RL",
+            "Name": "Guest Room",
+            "UserChangeEnable": false,
+            "Model": "4354",
+            "SerialNumber": "000000000000",
+            "SoftwareRevision": "2.1.5.0",
+            "HardwareRevision": "tus"
+          },
+          "AccessoryValue": {
+            "IndoorHumidity": 58,
+            "MotionDet": false,
+            "OccupancyDet": false,
+            "IndoorTemperature": 74.0,
+            "ExcludeTemp": false,
+            "ExcludeMotion": false,
+            "OccupancySensitivity": "Medium",
+            "OccupancyTimeout": 0,
+            "Status": "Ok",
+            "BatteryStatus": "Ok",
+            "RssiAverage": -60,
+            "PollutantLevels": [],
+            "TemperatureActual": 72.461
+          }
+        }
+      ],
+      "AvgTemperature": 72.0,
+      "AvgHumidity": 58.0
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "NotificationType": "LiveFeedEvent",
+  "Body": {
+    "PropertyName": "FanSwitch",
+    "Value": { "Position": "On", "Speed": 1 }
+  },
+  "TemplateId": "LiveFeedEvent_FanSwitch"
+}

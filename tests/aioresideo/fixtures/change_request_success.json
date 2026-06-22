@@ -1,0 +1,15 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "ChannelId": "ds-notification-service",
+  "From": "Tabasco",
+  "NotificationType": "ChangeRequestSuccess",
+  "DeviceType": "DenaliThermostat",
+  "LocationId": "Q29uc3VtZXJEZXZpY2VMb2NhdGlvbjowMDAw",
+  "Body": {
+    "TransactionId": "RHIE-qLo2sThYMXL",
+    "DeviceSerialNo": "000000000000",
+    "ChangeName": "changeSetpoint",
+    "ChangeDirection": "AppInitiated"
+  },
+  "TemplateId": "ChangeRequestSuccess"
+}

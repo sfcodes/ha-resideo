@@ -1,0 +1,129 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Resideo",
+        "description": "Choose how to connect to your Resideo account.",
+        "menu_options": {
+          "login": "Email and password",
+          "manual": "Paste a refresh token"
+        }
+      },
+      "login": {
+        "title": "Sign in to Resideo",
+        "description": "Use the same email and password as the Resideo / First Alert app.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "manual": {
+        "title": "Refresh token",
+        "description": "Paste a refresh_token obtained by proxying login.resideo.com.",
+        "data": {
+          "refresh_token": "Refresh token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication",
+      "cannot_connect": "Failed to connect"
+    },
+    "abort": {
+      "no_token": "No refresh token was returned by Resideo.",
+      "reauth_successful": "Re-authentication was successful"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "indoor_temperature": { "name": "Indoor temperature" },
+      "outdoor_temperature": { "name": "Outdoor temperature" },
+      "indoor_humidity": { "name": "Indoor humidity" },
+      "outdoor_humidity": { "name": "Outdoor humidity" },
+      "tvoc": { "name": "VOC" },
+      "battery_status": { "name": "Battery" },
+      "heat_setpoint": { "name": "Heat setpoint" },
+      "cool_setpoint": { "name": "Cool setpoint" },
+      "setpoint_status": { "name": "Hold status" },
+      "equipment_status": { "name": "Equipment status" },
+      "demand": { "name": "Demand" },
+      "current_stage": { "name": "Current stage" },
+      "air_quality": { "name": "Air quality" },
+      "co2_quality": { "name": "CO2 quality" },
+      "voc_quality": { "name": "VOC quality" },
+      "humidity_quality": { "name": "Humidity quality" },
+      "schedule_period": { "name": "Schedule period" },
+      "backlight": { "name": "Backlight" },
+      "priority_type": { "name": "Room priority" },
+      "air_filter_remaining": { "name": "Air filter remaining" },
+      "firmware_version": { "name": "Firmware" },
+      "fault_count": { "name": "Faults" },
+      "temperature_actual": { "name": "Temperature (actual)" },
+      "status": { "name": "Status" },
+      "heat_cool_mode": { "name": "Heat/cool mode" },
+      "fan_reason": { "name": "Fan reason" },
+      "demand_response": { "name": "Demand response" },
+      "schedule_day": { "name": "Schedule day" },
+      "schedule_type": { "name": "Schedule type" },
+      "adaptive_recovery_mode": { "name": "Adaptive recovery mode" },
+      "ventilation_timer": { "name": "Ventilation timer" },
+      "ventilation_boost_timer": { "name": "Ventilation boost timer" },
+      "language": { "name": "Language" },
+      "firmware_status": { "name": "Firmware status" },
+      "firmware_updated": { "name": "Firmware updated" },
+      "registered": { "name": "Registered" },
+      "heating_system": { "name": "Heating system" },
+      "heating_stages": { "name": "Heating stages" },
+      "cooling_system": { "name": "Cooling system" },
+      "cooling_stages": { "name": "Cooling stages" },
+      "temperature_units": { "name": "Temperature units" },
+      "matter_status": { "name": "Matter status" },
+      "priority_status": { "name": "Priority status" },
+      "occupancy_timeout": { "name": "Occupancy timeout" }
+    },
+    "binary_sensor": {
+      "fan_running": { "name": "Fan" },
+      "circulation_fan": { "name": "Circulation fan" },
+      "adaptive_recovery_active": { "name": "Adaptive recovery active" },
+      "vacation_hold": { "name": "Vacation hold" },
+      "air_filter": { "name": "Air filter" },
+      "fault": { "name": "Fault" },
+      "freeze_protection": { "name": "Freeze protection" },
+      "freeze_protection_configured": { "name": "Freeze protection configured" },
+      "away_mode": { "name": "Away mode" },
+      "commercial": { "name": "Commercial mode" }
+    },
+    "switch": {
+      "feels_like": { "name": "Feels Like" },
+      "adaptive_recovery": { "name": "Adaptive recovery" },
+      "schedule": { "name": "Schedule" },
+      "emergency_heat": { "name": "Emergency heat" },
+      "exclude_motion": { "name": "Exclude motion" },
+      "exclude_temperature": { "name": "Exclude temperature" }
+    },
+    "select": {
+      "occupancy_sensitivity": { "name": "Occupancy sensitivity" }
+    },
+    "number": {
+      "freeze_protection_low_limit": { "name": "Freeze protection floor" },
+      "heat_setpoint_min": { "name": "Heat setpoint minimum" },
+      "heat_setpoint_max": { "name": "Heat setpoint maximum" },
+      "cool_setpoint_min": { "name": "Cool setpoint minimum" },
+      "cool_setpoint_max": { "name": "Cool setpoint maximum" }
+    },
+    "climate": {
+      "thermostat": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "permanent_hold": "Permanent hold",
+              "temporary_hold": "Temporary hold",
+              "hold_until": "Hold until",
+              "vacation": "Vacation"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Test-only dependencies.
+pytest
+pytest-asyncio
+aioresponses
+# When integration-layer tests are added under tests/resideo/, also add:
+#   pytest-homeassistant-custom-component

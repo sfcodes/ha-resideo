@@ -1,0 +1,30 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "NotificationType": "LiveFeedEvent",
+  "Body": {
+    "PropertyName": "Sensor",
+    "Value": {
+      "RoomId": 0,
+      "AccessoryId": 0,
+      "AccessoryAttribute": {
+        "Type": "TS",
+        "ConnectionMethod": "WI",
+        "Name": "Thermostat",
+        "SerialNumber": "000000000000",
+        "SoftwareRevision": "01.3605.740"
+      },
+      "AccessoryValue": {
+        "IndoorTemperature": 78,
+        "IndoorHumidity": 52,
+        "OccupancyDet": true,
+        "MotionDet": false,
+        "CarbonDioxide": { "Measurement": 430 },
+        "TotalVolatileOrganicCompounds": { "Measurement": 2 },
+        "Status": "Ok",
+        "RssiAverage": -62
+      }
+    },
+    "SubscriptionExpiration": "2026-06-19T19:26:46+00:00"
+  },
+  "TemplateId": "LiveFeedEvent_Sensor"
+}

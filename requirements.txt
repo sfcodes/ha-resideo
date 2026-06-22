@@ -1,0 +1,5 @@
+# Runtime/dev dependencies.
+# In production Home Assistant provides itself + aiohttp; the vendored aioresideo client
+# only needs aiohttp. `homeassistant` is listed so CI and local dev can import the integration.
+aiohttp
+homeassistant

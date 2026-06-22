@@ -1,0 +1,13 @@
+{
+  "method": "PUT",
+  "url": "https://api.resideo.com/devsrv/api/v2/device/AABBCCDDEEFF/coolSetpoint",
+  "status": 202,
+  "request_body": {
+    "SetpointStatus": "PermanentHold",
+    "SetpointValue": 75.0,
+    "ChannelId": "ds-notification-service"
+  },
+  "response_body": {
+    "TransactionId": "6psZlLgBbFPcKhtv"
+  }
+}

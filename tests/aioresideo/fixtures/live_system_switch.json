@@ -1,0 +1,9 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "NotificationType": "LiveFeedEvent",
+  "Body": {
+    "PropertyName": "SystemSwitch",
+    "Value": { "SystemSwitch": "Heat", "HeatCoolMode": "Heat" }
+  },
+  "TemplateId": "LiveFeedEvent_SystemSwitch"
+}

@@ -1,0 +1,156 @@
+{
+  "DeviceId": "AABBCCDDEEFF",
+  "Reported": {
+    "FanSwitchCapabilities": {
+      "Positions": [
+        "On",
+        "Auto",
+        "Circulate"
+      ],
+      "MaxSpeed": 1
+    },
+    "SystemSwitchCapabilities": [
+      "EmergencyHeat",
+      "Heat",
+      "Off",
+      "Cool",
+      "Auto"
+    ],
+    "MinimumCoolSetpointAllowed": 50.0,
+    "MaximumCoolSetpointAllowed": 90.0,
+    "MinimumHeatSetpointAllowed": 50.0,
+    "MaximumHeatSetpointAllowed": 90.0,
+    "SetpointDeadband": 0.0,
+    "CommercialConfiguration": false,
+    "BackLightIntensity": 10,
+    "MaximumBackLightIntensity": 10,
+    "MinimumBackLightIntensity": 0,
+    "AllowedAdaptiveRecoveryModes": [
+      "None",
+      "AdaptiveIntelligentRecovery"
+    ],
+    "TemperatureUnits": "F",
+    "SupportedCapabilities": [
+      "AccessoryValues",
+      "AirFilterTimer",
+      "BackLight",
+      "DehumidificationTimer",
+      "Fan",
+      "FeelsLike",
+      "FaultThresholds",
+      "HumidificationTimer",
+      "Groups",
+      "Matter",
+      "Rooms",
+      "PeriodNames",
+      "AdaptiveIntellegentRecovery",
+      "SensorSchedule",
+      "SetUpConfiguration",
+      "StreamStart",
+      "VentilationBoostTimer",
+      "VentilationTimer",
+      "FreezeProtection",
+      "IndoorAirQuality",
+      "AwayModeOverride",
+      "TemperatureControl",
+      "RemoteChangeAllowedSetpoint",
+      "RemoteChangeActivatableBackLightIntensity",
+      "AutoCapableBackLightIntensity"
+    ],
+    "ScheduleCapabilities": {
+      "AvailableScheduleTypes": [
+        "None",
+        "Geofenced",
+        "GeofencedWithSleep",
+        "TimedNorthAmerica"
+      ],
+      "SchedulableFan": true,
+      "SchedulableSysSwitchOff": false
+    },
+    "AllowedTimeIncrements": 15,
+    "SystemConfiguration": {
+      "HeatingSystem": "CompressorHeat",
+      "HeatingStages": 3,
+      "CoolingSystem": "CompressorCool",
+      "CoolingStages": 2
+    },
+    "MaximumAllowedRoomsPerGroup": 20,
+    "MaximumGroupsPerGroupOfGroupsAllowed": 15,
+    "MaximumAllowedRooms": 20,
+    "MaximumAccessoriesPerRoom": 4,
+    "MaximumAllowedGroups": 1,
+    "FreezeProtection": {
+      "Configured": false,
+      "Active": false,
+      "LowLimitDegrees": 0
+    },
+    "TemperatureUnitsWritable": false,
+    "Backlight": {
+      "Active": 10,
+      "Inactive": 10,
+      "RemoteChangeIndication": true,
+      "AutoBacklightLevel": true,
+      "AutoLevel": 5
+    },
+    "BacklightCapability": {
+      "Active": {
+        "Minimum": 1,
+        "Maximum": 10
+      },
+      "Inactive": {
+        "Minimum": 0,
+        "Maximum": 10
+      }
+    },
+    "AirFilterReminders": {
+      "1": {
+        "IsCalendarDays": false,
+        "IsReminderEnabled": false,
+        "RestartDays": 0
+      }
+    },
+    "Matter": {
+      "CommissioningStatus": "Commissioned",
+      "VendorId": 4890,
+      "ProductId": 4352,
+      "CustomFlowFlag": 1,
+      "DiscoveryCapabilitiesBitmask": 4,
+      "DiscriminatorValue": 1464,
+      "Fabrics": [
+        {
+          "VendorId": 4937,
+          "Label": "2335 Boston"
+        },
+        {
+          "VendorId": 4996,
+          "Label": "NA"
+        }
+      ]
+    },
+    "DisplayConfiguration": {
+      "IdleScreenConfiguration": {
+        "MaximumAllowedSetting": 9,
+        "CurrentSetting": 7,
+        "MaximumAllowedColorSetting": 7,
+        "CurrentColorSetting": 23,
+        "MotionTriggerToHomeScreen": true
+      }
+    },
+    "AwayModeOverride": false,
+    "DealerInformation": {
+      "DealerName": "",
+      "DealerPhone": "",
+      "DealerWebAddress": "",
+      "Email": "",
+      "Message": "",
+      "LightLogoUrl": "",
+      "DarkLogoUrl": "",
+      "IsProSync": false
+    },
+    "FaultThresholds": {
+      "ZoneEnablesTemperature": {},
+      "ZoneEnablesHumidity": {}
+    }
+  },
+  "Desired": {}
+}

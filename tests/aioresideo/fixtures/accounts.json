@@ -1,0 +1,42 @@
+{
+  "data": {
+    "firstName": "Test",
+    "lastName": "User",
+    "contactEmail": "test@example.com",
+    "countryCode": "US",
+    "locale": "en-US",
+    "consumerUsers": [
+      {
+        "consumerAccount": {
+          "id": "ConsumerAccount:00000000-0000-0000-0000-000000000000",
+          "locations": [
+            {
+              "id": "Q29uc3VtZXJEZXZpY2VMb2NhdGlvbjowMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDA=",
+              "name": "Home",
+              "consumerDevices": [
+                {
+                  "id": "ConsumerDevice:11111111-1111-1111-1111-111111111111",
+                  "name": "Master Bedroom",
+                  "device": {
+                    "deviceId": "AABBCCDDEEFF",
+                    "globalDeviceType": "Denali_S1200",
+                    "id": "THlyaWNUaGVybW9zdGF0RGV2aWNlOkFBQkJDQ0RERUVGRg=="
+                  }
+                },
+                {
+                  "id": "ConsumerDevice:33333333-3333-3333-3333-333333333333",
+                  "name": "Hallway Smoke",
+                  "device": {
+                    "deviceId": "DDEEFFAABBCC",
+                    "globalDeviceType": "OneLink_SC",
+                    "id": "U21va2VEZXRlY3RvckRldmljZTpEREVFRkZBQUJCQ0M="
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
