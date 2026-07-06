@@ -9,7 +9,9 @@ Azure SignalR stream and is merged into the cached shadow. If the stream fails, 
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -24,6 +26,7 @@ from .aioresideo import (
     ResideoChangeConfirm,
     ResideoConfiguration,
     ResideoLiveFeed,
+    ResideoLocation,
     ResideoPriority,
     ResideoRooms,
     ResideoStream,
@@ -81,7 +84,7 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         )
         self.api = api
         self._macs: list[str] = []
-        self._targets: list[dict] = []
+        self._targets: list[ResideoLocation] = []
         self._streams: list[ResideoStream] = []
         # Settings (Feels Like, Adaptive Recovery, ...) and unmerged value-types carry no usable
         # value on the stream; a stream event schedules this debounced REST resync to fetch them.
@@ -98,11 +101,11 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         # composing that body: without them a write for one field would echo the others from the
         # shadow, which lags a ``202`` by ~2 s, so a second write inside that window would clobber
         # the first. Keyed by (mac, accessory_id); each field is cleared once a refresh confirms it.
-        self._accessory_overrides: dict[tuple[str, int], dict[str, object]] = {}
+        self._accessory_overrides: dict[tuple[str, int], dict[str, Any]] = {}
         # setPointCapabilities has the same no-merge gotcha: a partial body 202s but is silently
         # ignored, so every write must carry all four limits. Same shared-override trick (keyed by
         # mac) so two limit edits inside the ~2 s read-back window can't clobber each other.
-        self._setpoint_limit_overrides: dict[str, dict[str, float]] = {}
+        self._setpoint_limit_overrides: dict[str, dict[str, Any]] = {}
 
     async def _async_setup(self) -> None:
         """One-time discovery: the thermostats + the per-location SignalR targets."""
@@ -126,42 +129,88 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
 
         Reads the shadow + rooms + configuration + priority per thermostat. The ``/priority`` read
         also (re)warms the SignalR live feed (spec §9.2). Runs at setup and once per (re)connect.
+
+        Failures are isolated per device: a failing thermostat keeps its previous snapshot (or
+        drops out if it never had one) so the others stay live; only every-device-failing raises.
         """
         result: dict[str, ResideoDeviceData] = {}
-        try:
-            for mac in self._macs:
-                thermostat = await self.api.async_get_device(mac)
-                # Rooms / configuration / priority are best-effort: a stripped-down thermostat
-                # may 404 on these, but the shadow (above) must succeed.
-                try:
-                    rooms = await self.api.async_get_rooms(mac)
-                except ResideoApiError as err:
-                    _LOGGER.debug("No room sensors for %s (%s)", mac, err)
-                    rooms = ResideoRooms({})
-                try:
-                    configuration = await self.api.async_get_configuration(mac)
-                except ResideoApiError as err:
-                    _LOGGER.debug("No configuration for %s (%s)", mac, err)
-                    configuration = ResideoConfiguration({})
-                try:
-                    priority = await self.api.async_get_priority(mac)
-                except ResideoApiError as err:
-                    _LOGGER.debug("No priority for %s (%s)", mac, err)
-                    priority = ResideoPriority({})
-                result[mac] = ResideoDeviceData(
-                    thermostat=thermostat,
-                    rooms=rooms,
-                    configuration=configuration,
-                    priority=priority,
-                )
-        except ResideoAuthError as err:
-            raise ConfigEntryAuthFailed(str(err)) from err
-        except (ResideoConnectionError, ResideoError) as err:
-            raise UpdateFailed(str(err)) from err
+        failures: list[str] = []
+        for mac in self._macs:
+            try:
+                result[mac] = await self._async_read_device(mac)
+            except ResideoAuthError as err:
+                raise ConfigEntryAuthFailed(str(err)) from err
+            except (ResideoConnectionError, ResideoError) as err:
+                failures.append(f"{mac}: {err}")
+                previous = (self.data or {}).get(mac)
+                if previous is not None:
+                    result[mac] = previous
+        if failures:
+            if len(failures) == len(self._macs):
+                raise UpdateFailed("; ".join(failures))
+            _LOGGER.warning(
+                "Resync failed for %d of %d thermostat(s): %s",
+                len(failures),
+                len(self._macs),
+                "; ".join(failures),
+            )
         return result
 
-    # -- accessory writes (full-body, optimism-coalesced) ---------------------
-    def accessory_override(self, mac: str, accessory_id: int) -> dict[str, object]:
+    async def _async_read_device(self, mac: str) -> ResideoDeviceData:
+        """Read one thermostat's full snapshot.
+
+        Rooms / configuration / priority are best-effort: a stripped-down thermostat may 404
+        on these, but the shadow must succeed.
+        """
+        thermostat = await self.api.async_get_device(mac)
+        try:
+            rooms = await self.api.async_get_rooms(mac)
+        except ResideoApiError as err:
+            _LOGGER.debug("No room sensors for %s (%s)", mac, err)
+            rooms = ResideoRooms({})
+        try:
+            configuration = await self.api.async_get_configuration(mac)
+        except ResideoApiError as err:
+            _LOGGER.debug("No configuration for %s (%s)", mac, err)
+            configuration = ResideoConfiguration({})
+        try:
+            priority = await self.api.async_get_priority(mac)
+        except ResideoApiError as err:
+            _LOGGER.debug("No priority for %s (%s)", mac, err)
+            priority = ResideoPriority({})
+        return ResideoDeviceData(
+            thermostat=thermostat,
+            rooms=rooms,
+            configuration=configuration,
+            priority=priority,
+        )
+
+    # -- full-body writes (optimism-coalesced; see ``__init__``) ---------------
+    @staticmethod
+    async def _async_write_with_override(
+        override: dict[str, Any],
+        field: str,
+        value: Any,
+        write: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
+    ) -> dict[str, Any]:
+        """Record ``override[field] = value`` and send the full body via ``write(override)``.
+
+        On failure the override is reverted, so a failed write can't poison later full-body
+        composes. The calling entity clears its field once a refresh confirms it.
+        """
+        had_previous = field in override
+        previous = override.get(field)
+        override[field] = value
+        try:
+            return await write(override)
+        except Exception:
+            if had_previous:
+                override[field] = previous
+            else:
+                override.pop(field, None)
+            raise
+
+    def accessory_override(self, mac: str, accessory_id: int) -> dict[str, Any]:
         """Shared optimistic overrides for one accessory's writable fields (see ``__init__``)."""
         return self._accessory_overrides.setdefault((mac, accessory_id), {})
 
@@ -172,36 +221,27 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         accessory: ResideoAccessory,
         *,
         field: str,
-        value: object,
-    ) -> dict[str, object]:
+        value: Any,
+    ) -> dict[str, Any]:
         """Set one ``accessoryValue`` field, sending the full body from the shared overrides.
 
         ``field`` is one of ``sensitivity`` / ``exclude_motion`` / ``exclude_temp`` (the API kwargs).
-        Fields with no pending override fall back to the current shadow ``accessory`` snapshot. The
-        calling entity clears its own field's override once a refresh confirms it.
+        Fields with no pending override fall back to the current shadow ``accessory`` snapshot.
         """
-        override = self.accessory_override(mac, accessory_id)
-        had_previous = field in override
-        previous = override.get(field)
-        override[field] = value
-        try:
-            return await self.api.async_set_accessory_value(
+        return await self._async_write_with_override(
+            self.accessory_override(mac, accessory_id),
+            field,
+            value,
+            lambda ov: self.api.async_set_accessory_value(
                 mac,
                 accessory_id,
-                sensitivity=override.get("sensitivity", accessory.occupancy_sensitivity),
-                exclude_motion=override.get("exclude_motion", accessory.exclude_motion),
-                exclude_temp=override.get("exclude_temp", accessory.exclude_temperature),
-            )
-        except Exception:
-            # Revert the optimistic override so a failed write can't poison later full-body writes.
-            if had_previous:
-                override[field] = previous
-            else:
-                override.pop(field, None)
-            raise
+                sensitivity=ov.get("sensitivity", accessory.occupancy_sensitivity),
+                exclude_motion=ov.get("exclude_motion", accessory.exclude_motion),
+                exclude_temp=ov.get("exclude_temp", accessory.exclude_temperature),
+            ),
+        )
 
-    # -- setpoint-limit writes (full-body, optimism-coalesced) ----------------
-    def setpoint_limit_override(self, mac: str) -> dict[str, float]:
+    def setpoint_limit_override(self, mac: str) -> dict[str, Any]:
         """Shared optimistic overrides for a device's four setpoint limits (see ``__init__``)."""
         return self._setpoint_limit_overrides.setdefault(mac, {})
 
@@ -212,31 +252,24 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         *,
         field: str,
         value: float,
-    ) -> dict[str, object]:
+    ) -> dict[str, Any]:
         """Set one setpoint limit, sending the full four-field body from the shared overrides.
 
         ``field`` is one of ``heat_min`` / ``heat_max`` / ``cool_min`` / ``cool_max``. Fields with
-        no pending override fall back to the current ``configuration`` snapshot. The calling entity
-        clears its own field's override once a refresh confirms it.
+        no pending override fall back to the current ``configuration`` snapshot.
         """
-        override = self.setpoint_limit_override(mac)
-        had_previous = field in override
-        previous = override.get(field)
-        override[field] = value
-        try:
-            return await self.api.async_set_setpoint_capabilities(
+        return await self._async_write_with_override(
+            self.setpoint_limit_override(mac),
+            field,
+            value,
+            lambda ov: self.api.async_set_setpoint_capabilities(
                 mac,
-                heat_min=override.get("heat_min", configuration.min_heat_setpoint),
-                heat_max=override.get("heat_max", configuration.max_heat_setpoint),
-                cool_min=override.get("cool_min", configuration.min_cool_setpoint),
-                cool_max=override.get("cool_max", configuration.max_cool_setpoint),
-            )
-        except Exception:
-            if had_previous:
-                override[field] = previous
-            else:
-                override.pop(field, None)
-            raise
+                heat_min=ov.get("heat_min", configuration.min_heat_setpoint),
+                heat_max=ov.get("heat_max", configuration.max_heat_setpoint),
+                cool_min=ov.get("cool_min", configuration.min_cool_setpoint),
+                cool_max=ov.get("cool_max", configuration.max_cool_setpoint),
+            ),
+        )
 
     # -- SignalR streaming ----------------------------------------------------
     async def async_start_streams(self) -> None:
@@ -248,13 +281,12 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         """
         known = set(self._macs)
         for target in self._targets:
-            device_ids = [m for m in target.get("device_ids", []) if m in known]
-            node_id = target.get("node_id")
-            if not device_ids or not node_id:
+            device_ids = [m for m in target.device_ids if m in known]
+            if not device_ids or not target.node_id:
                 continue
             self._streams.append(
                 self.api.create_stream(
-                    node_id,
+                    target.node_id,
                     device_ids,
                     self._on_stream_event,
                     on_connected=self._on_stream_connected,
@@ -290,16 +322,22 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
     def _on_stream_event(self, event: ResideoLiveFeed | ResideoChangeConfirm) -> None:
         """Apply one SignalR event to the cached data (called on the loop from the recv loop)."""
         if isinstance(event, ResideoChangeConfirm):
+            if not event.success:
+                # The cloud accepted (202) but the device/service rejected the change — the
+                # optimistic UI value will be rolled back by the reconcile refresh.
+                _LOGGER.warning(
+                    "Resideo rejected change %s (txn=%s) for %s",
+                    event.change_name,
+                    event.transaction_id,
+                    event.device_id,
+                )
+                return
             _LOGGER.debug(
-                "ChangeRequest %s (%s) txn=%s",
-                event.change_name,
-                "ok" if event.success else "FAILED",
-                event.transaction_id,
+                "ChangeRequest %s ok txn=%s", event.change_name, event.transaction_id
             )
             # Settings changes (Feels Like, Adaptive Recovery, schedule, reminders, ...) ride
             # ChangeRequest and carry NO values -> re-read the shadow to reflect them (spec §9a/§9.1).
-            if event.success:
-                self._schedule_resync()
+            self.schedule_resync()
             return
         if not isinstance(event, ResideoLiveFeed) or not self.data:
             return
@@ -309,7 +347,7 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         if event.property_name not in LIVE_FEED_MERGED_PROPERTIES:
             # A value-bearing type we don't merge in-memory (Schedule*, DrEventStatus, ...) ->
             # resync to reflect it without guessing its push shape.
-            self._schedule_resync()
+            self.schedule_resync()
             return
         new_shadow, new_rooms = apply_live_feed(
             current.thermostat.attributes, current.rooms.attributes, event
@@ -324,8 +362,13 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         self.async_set_updated_data({**self.data, event.device_id: updated})
 
     @callback
-    def _schedule_resync(self) -> None:
-        """Debounced REST resync triggered by value-less stream events (coalesces bursts)."""
+    def schedule_resync(self) -> None:
+        """Schedule the debounced REST resync (coalesces bursts into one refresh).
+
+        Used for value-less stream events (settings ChangeRequests, unmerged LiveFeed types)
+        and by entities after a write — the optimistic value covers the UI meanwhile, and the
+        debounce lets the just-written value settle on the cloud before it is re-read.
+        """
         self._resync_debouncer.async_schedule_call()
 
     async def _on_stream_connected(self) -> None:
