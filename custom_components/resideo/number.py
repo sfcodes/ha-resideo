@@ -21,10 +21,9 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.const import EntityCategory, UnitOfTemperature
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.event import async_call_later
 
 from .aioresideo import Resideo, ResideoConfiguration
 from .aioresideo.exceptions import ResideoError
@@ -33,9 +32,17 @@ from .coordinator import (
     ResideoDataUpdateCoordinator,
     ResideoDeviceData,
 )
-from .entity import ResideoEntity
+from .entity import OptimisticWriteMixin, ResideoEntity
 
-RECONCILE_DELAY = 10  # seconds — mirror climate.py
+# Writes are commands; serialize service calls per platform (reads are pure push).
+PARALLEL_UPDATES = 1
+
+
+def _writable_in_fahrenheit(d: ResideoDeviceData) -> bool:
+    """These commands write integer °F (verified live on an F device); the write semantics on
+    a Celsius-configured device are unknown, so hide the controls there rather than risk
+    writing garbage. Revisit when a C capture exists."""
+    return d.configuration.temperature_units != "C"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -60,7 +67,8 @@ DEVICE_NUMBERS: tuple[ResideoNumberEntityDescription, ...] = (
         mode=NumberMode.BOX,
         value_fn=lambda d: d.configuration.freeze_protection_low_limit,
         set_fn=lambda api, mac, v: api.async_set_freeze_protection(mac, v),
-        exists_fn=lambda d: d.configuration.freeze_protection_configured,
+        exists_fn=lambda d: d.configuration.freeze_protection_configured
+        and _writable_in_fahrenheit(d),
     ),
 )
 
@@ -107,7 +115,7 @@ def _limit_desc(
         native_step=1,
         mode=NumberMode.BOX,
         value_fn=value_fn,
-        exists_fn=lambda d: value_fn(d) is not None,
+        exists_fn=lambda d: value_fn(d) is not None and _writable_in_fahrenheit(d),
     )
 
 
@@ -142,8 +150,8 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ResideoNumber(ResideoEntity, NumberEntity):
-    """A writable numeric device-setting (optimistic + reconciled like the climate entity)."""
+class ResideoNumber(OptimisticWriteMixin, ResideoEntity, NumberEntity):
+    """A writable numeric device-setting (optimistic + reconciled; see ``OptimisticWriteMixin``)."""
 
     entity_description: ResideoNumberEntityDescription
 
@@ -156,21 +164,17 @@ class ResideoNumber(ResideoEntity, NumberEntity):
         super().__init__(coordinator, mac)
         self.entity_description = description
         self._attr_unique_id = f"{mac}_{description.key}"
-        self._optimistic: float | None = None
-        self._reconcile_unsub: CALLBACK_TYPE | None = None
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        if self._optimistic is not None:
-            data = self._device_data
-            if data is not None and self.entity_description.value_fn(data) == self._optimistic:
-                self._optimistic = None
-        super()._handle_coordinator_update()
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        data = self._device_data
+        if data is None:
+            return None
+        return {"native_value": self.entity_description.value_fn(data)}
 
     @property
     def native_value(self) -> float | None:
-        if self._optimistic is not None:
-            return self._optimistic
+        if "native_value" in self._optimistic:
+            return self._optimistic["native_value"]
         data = self._device_data
         return self.entity_description.value_fn(data) if data else None
 
@@ -181,32 +185,10 @@ class ResideoNumber(ResideoEntity, NumberEntity):
             raise HomeAssistantError(
                 f"Failed to set {self.entity_description.key}: {err}"
             ) from err
-        self._optimistic = value
-        self.async_write_ha_state()
-        await self.coordinator.async_refresh()
-        self._schedule_reconcile()
-
-    def _schedule_reconcile(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-
-        async def _reconcile(_now: Any) -> None:
-            self._reconcile_unsub = None
-            await self.coordinator.async_refresh()
-            if self._optimistic is not None:
-                self._optimistic = None
-                self.async_write_ha_state()
-
-        self._reconcile_unsub = async_call_later(self.hass, RECONCILE_DELAY, _reconcile)
-
-    async def async_will_remove_from_hass(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-            self._reconcile_unsub = None
-        await super().async_will_remove_from_hass()
+        await self._async_post_write({"native_value": value})
 
 
-class ResideoSetpointLimitNumber(ResideoEntity, NumberEntity):
+class ResideoSetpointLimitNumber(OptimisticWriteMixin, ResideoEntity, NumberEntity):
     """A Setpoint-Limit floor/ceiling (optimistic + reconciled, ~2 s read-back).
 
     Writes go through the coordinator, which composes the full four-field ``setPointCapabilities``
@@ -225,28 +207,24 @@ class ResideoSetpointLimitNumber(ResideoEntity, NumberEntity):
         super().__init__(coordinator, mac)
         self.entity_description = description
         self._attr_unique_id = f"{mac}_{description.key}"
-        self._optimistic: float | None = None
-        self._reconcile_unsub: CALLBACK_TYPE | None = None
+
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        data = self._device_data
+        if data is None:
+            return None
+        return {"native_value": self.entity_description.value_fn(data)}
 
     @callback
-    def _handle_coordinator_update(self) -> None:
-        if self._optimistic is not None:
-            data = self._device_data
-            if data is not None and self.entity_description.value_fn(data) == self._optimistic:
-                self._clear_optimistic()
-        super()._handle_coordinator_update()
-
-    @callback
-    def _clear_optimistic(self) -> None:
-        self._optimistic = None
+    def _on_optimistic_cleared(self, key: str) -> None:
+        # Also release this limit's shared full-body override (see the coordinator helper).
         self.coordinator.setpoint_limit_override(self._mac).pop(
             self.entity_description.field, None
         )
 
     @property
     def native_value(self) -> float | None:
-        if self._optimistic is not None:
-            return self._optimistic
+        if "native_value" in self._optimistic:
+            return self._optimistic["native_value"]
         data = self._device_data
         return self.entity_description.value_fn(data) if data else None
 
@@ -290,26 +268,4 @@ class ResideoSetpointLimitNumber(ResideoEntity, NumberEntity):
             raise HomeAssistantError(
                 f"Failed to set {desc.key}: {err}"
             ) from err
-        self._optimistic = value
-        self.async_write_ha_state()
-        await self.coordinator.async_refresh()
-        self._schedule_reconcile()
-
-    def _schedule_reconcile(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-
-        async def _reconcile(_now: Any) -> None:
-            self._reconcile_unsub = None
-            await self.coordinator.async_refresh()
-            if self._optimistic is not None:
-                self._clear_optimistic()
-                self.async_write_ha_state()
-
-        self._reconcile_unsub = async_call_later(self.hass, RECONCILE_DELAY, _reconcile)
-
-    async def async_will_remove_from_hass(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-            self._reconcile_unsub = None
-        await super().async_will_remove_from_hass()
+        await self._async_post_write({"native_value": value})

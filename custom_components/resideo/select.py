@@ -12,6 +12,8 @@ would wrongly snap the UI back before the sensor has checked in).
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
@@ -21,7 +23,10 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .aioresideo.const import OCCUPANCY_SENSITIVITY_OPTIONS
 from .aioresideo.exceptions import ResideoError
 from .coordinator import ResideoConfigEntry, ResideoDataUpdateCoordinator
-from .entity import ResideoAccessoryEntity
+from .entity import OptimisticWriteMixin, ResideoAccessoryEntity
+
+# Writes are commands; serialize service calls per platform (reads are pure push).
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
@@ -41,12 +46,19 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ResideoOccupancySensitivitySelect(ResideoAccessoryEntity, SelectEntity):
+class ResideoOccupancySensitivitySelect(
+    OptimisticWriteMixin, ResideoAccessoryEntity, SelectEntity
+):
     """A remote sensor's occupancy-sensitivity select (optimistic, reconcile-on-report)."""
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "occupancy_sensitivity"
     _attr_options = list(OCCUPANCY_SENSITIVITY_OPTIONS)
+    # Sensitivity is eventually-consistent (applied at the battery sensor's next check-in), so
+    # there is NO reconcile timer — a fixed delay would wrongly snap the UI back before the
+    # sensor has checked in. The optimistic value is held until a refresh reports it (e.g. the
+    # periodic reconnect resync, or a Sensor push that carries it).
+    _reconcile_delay = None
 
     def __init__(
         self,
@@ -61,24 +73,23 @@ class ResideoOccupancySensitivitySelect(ResideoAccessoryEntity, SelectEntity):
         self._attr_unique_id = (
             f"{mac}_room{room.id}_acc{accessory.accessory_id}_occupancy_sensitivity"
         )
-        # Held until a refresh reports the chosen value (sensitivity is eventually-consistent).
-        self._optimistic: str | None = None
+
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        accessory = self.accessory
+        if accessory is None:
+            return None
+        return {"current_option": accessory.occupancy_sensitivity}
 
     @callback
-    def _handle_coordinator_update(self) -> None:
-        if self._optimistic is not None:
-            accessory = self.accessory
-            if accessory is not None and accessory.occupancy_sensitivity == self._optimistic:
-                self._optimistic = None
-                self.coordinator.accessory_override(self._mac, self._accessory_id).pop(
-                    "sensitivity", None
-                )
-        super()._handle_coordinator_update()
+    def _on_optimistic_cleared(self, key: str) -> None:
+        self.coordinator.accessory_override(self._mac, self._accessory_id).pop(
+            "sensitivity", None
+        )
 
     @property
     def current_option(self) -> str | None:
-        if self._optimistic is not None:
-            return self._optimistic
+        if "current_option" in self._optimistic:
+            return self._optimistic["current_option"]
         accessory = self.accessory
         return accessory.occupancy_sensitivity if accessory else None
 
@@ -94,9 +105,4 @@ class ResideoOccupancySensitivitySelect(ResideoAccessoryEntity, SelectEntity):
             )
         except ResideoError as err:
             raise HomeAssistantError(f"Failed to set occupancy sensitivity: {err}") from err
-        self._optimistic = option
-        self.async_write_ha_state()
-        # A refresh now will not reflect the change (deferred to the sensor's next check-in); the
-        # optimistic value is cleared by _handle_coordinator_update whenever a later refresh reports
-        # it (e.g. the periodic reconnect resync, or a Sensor push that carries it).
-        await self.coordinator.async_refresh()
+        await self._async_post_write({"current_option": option})

@@ -24,10 +24,9 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.const import EntityCategory
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.event import async_call_later
 
 from .aioresideo import Resideo, ResideoAccessory
 from .aioresideo.const import (
@@ -42,10 +41,10 @@ from .coordinator import (
     ResideoDataUpdateCoordinator,
     ResideoDeviceData,
 )
-from .entity import ResideoAccessoryEntity, ResideoEntity
+from .entity import OptimisticWriteMixin, ResideoAccessoryEntity, ResideoEntity
 
-# After a write, force a confirming refresh this many seconds later (mirrors climate.py).
-RECONCILE_DELAY = 10  # seconds
+# Writes are commands; serialize service calls per platform (reads are pure push).
+PARALLEL_UPDATES = 1
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -155,8 +154,8 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ResideoSwitch(ResideoEntity, SwitchEntity):
-    """A writable device-setting switch (optimistic + reconciled like the climate entity)."""
+class ResideoSwitch(OptimisticWriteMixin, ResideoEntity, SwitchEntity):
+    """A writable device-setting switch (optimistic + reconciled; see ``OptimisticWriteMixin``)."""
 
     entity_description: ResideoSwitchEntityDescription
 
@@ -169,22 +168,17 @@ class ResideoSwitch(ResideoEntity, SwitchEntity):
         super().__init__(coordinator, mac)
         self.entity_description = description
         self._attr_unique_id = f"{mac}_{description.key}"
-        # Optimistic override; set on a successful write, cleared once a refresh confirms it.
-        self._optimistic: bool | None = None
-        self._reconcile_unsub: CALLBACK_TYPE | None = None
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        if self._optimistic is not None:
-            data = self._device_data
-            if data is not None and self.entity_description.value_fn(data) == self._optimistic:
-                self._optimistic = None
-        super()._handle_coordinator_update()
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        data = self._device_data
+        if data is None:
+            return None
+        return {"is_on": self.entity_description.value_fn(data)}
 
     @property
     def is_on(self) -> bool | None:
-        if self._optimistic is not None:
-            return self._optimistic
+        if "is_on" in self._optimistic:
+            return self._optimistic["is_on"]
         data = self._device_data
         return self.entity_description.value_fn(data) if data else None
 
@@ -201,36 +195,10 @@ class ResideoSwitch(ResideoEntity, SwitchEntity):
             raise HomeAssistantError(
                 f"Failed to set {self.entity_description.key}: {err}"
             ) from err
-        await self._async_post_write(on)
-
-    # --- optimistic-write plumbing (mirrors climate.py) ----------------------
-    async def _async_post_write(self, optimistic: bool) -> None:
-        self._optimistic = optimistic
-        self.async_write_ha_state()
-        await self.coordinator.async_refresh()
-        self._schedule_reconcile()
-
-    def _schedule_reconcile(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-
-        async def _reconcile(_now: Any) -> None:
-            self._reconcile_unsub = None
-            await self.coordinator.async_refresh()
-            if self._optimistic is not None:
-                self._optimistic = None
-                self.async_write_ha_state()
-
-        self._reconcile_unsub = async_call_later(self.hass, RECONCILE_DELAY, _reconcile)
-
-    async def async_will_remove_from_hass(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-            self._reconcile_unsub = None
-        await super().async_will_remove_from_hass()
+        await self._async_post_write({"is_on": on})
 
 
-class ResideoAccessorySwitch(ResideoAccessoryEntity, SwitchEntity):
+class ResideoAccessorySwitch(OptimisticWriteMixin, ResideoAccessoryEntity, SwitchEntity):
     """A remote room-sensor exclude flag (optimistic + reconciled; ~10 s read-back)."""
 
     entity_description: ResideoAccessorySwitchEntityDescription
@@ -250,31 +218,24 @@ class ResideoAccessorySwitch(ResideoAccessoryEntity, SwitchEntity):
         self._attr_unique_id = (
             f"{mac}_room{room.id}_acc{accessory.accessory_id}_{description.key}"
         )
-        self._optimistic: bool | None = None
-        self._reconcile_unsub: CALLBACK_TYPE | None = None
+
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        accessory = self.accessory
+        if accessory is None:
+            return None
+        return {"is_on": self.entity_description.value_fn(accessory)}
 
     @callback
-    def _handle_coordinator_update(self) -> None:
-        if self._optimistic is not None:
-            accessory = self.accessory
-            if (
-                accessory is not None
-                and self.entity_description.value_fn(accessory) == self._optimistic
-            ):
-                self._clear_optimistic()
-        super()._handle_coordinator_update()
-
-    @callback
-    def _clear_optimistic(self) -> None:
-        self._optimistic = None
+    def _on_optimistic_cleared(self, key: str) -> None:
+        # Also release this flag's shared full-body override (see the coordinator helper).
         self.coordinator.accessory_override(self._mac, self._accessory_id).pop(
             self.entity_description.field, None
         )
 
     @property
     def is_on(self) -> bool | None:
-        if self._optimistic is not None:
-            return self._optimistic
+        if "is_on" in self._optimistic:
+            return self._optimistic["is_on"]
         accessory = self.accessory
         return self.entity_description.value_fn(accessory) if accessory else None
 
@@ -302,29 +263,4 @@ class ResideoAccessorySwitch(ResideoAccessoryEntity, SwitchEntity):
             raise HomeAssistantError(
                 f"Failed to set {self.entity_description.key}: {err}"
             ) from err
-        await self._async_post_write(on)
-
-    async def _async_post_write(self, optimistic: bool) -> None:
-        self._optimistic = optimistic
-        self.async_write_ha_state()
-        await self.coordinator.async_refresh()
-        self._schedule_reconcile()
-
-    def _schedule_reconcile(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-
-        async def _reconcile(_now: Any) -> None:
-            self._reconcile_unsub = None
-            await self.coordinator.async_refresh()
-            if self._optimistic is not None:
-                self._clear_optimistic()
-                self.async_write_ha_state()
-
-        self._reconcile_unsub = async_call_later(self.hass, RECONCILE_DELAY, _reconcile)
-
-    async def async_will_remove_from_hass(self) -> None:
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-            self._reconcile_unsub = None
-        await super().async_will_remove_from_hass()
+        await self._async_post_write({"is_on": on})
