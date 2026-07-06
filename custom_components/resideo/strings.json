@@ -23,15 +23,26 @@
         "data": {
           "refresh_token": "Refresh token"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Resideo",
+        "description": "The stored credentials no longer work. Choose how to sign in again.",
+        "menu_options": {
+          "login": "Email and password",
+          "manual": "Paste a refresh token"
+        }
       }
     },
     "error": {
       "invalid_auth": "Invalid authentication",
-      "cannot_connect": "Failed to connect"
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
     },
     "abort": {
       "no_token": "No refresh token was returned by Resideo.",
-      "reauth_successful": "Re-authentication was successful"
+      "already_configured": "Account is already configured",
+      "reauth_successful": "Re-authentication was successful",
+      "reauth_account_mismatch": "These credentials belong to a different Resideo account than the one this entry was set up with."
     }
   },
   "entity": {
