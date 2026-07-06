@@ -1,5 +1,9 @@
 # Resideo (consumer API) — Home Assistant integration
 
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5)](https://hacs.xyz/docs/faq/custom_repositories/)
+[![GitHub release](https://img.shields.io/github/v/release/sfcodes/ha-resideo)](https://github.com/sfcodes/ha-resideo/releases)
+[![License](https://img.shields.io/github/license/sfcodes/ha-resideo)](LICENSE)
+
 Control **Resideo / Honeywell Home thermostats** in Home Assistant via the **private
 consumer API** at `api.resideo.com` — the same backend the Resideo / First Alert mobile app
 uses. You sign in with your normal Resideo email/password (Auth0), so **no
@@ -22,7 +26,8 @@ polling. Climate (temperature, humidity, HVAC mode, fan mode) is verified end-to
 
 ## Install (HACS custom repository)
 
-1. HACS → Integrations → ⋮ → Custom repositories → add this repo, category **Integration**.
+1. HACS → Integrations → ⋮ → Custom repositories → add
+   `https://github.com/sfcodes/ha-resideo`, category **Integration**.
 2. Install **Resideo**, restart Home Assistant.
 3. Settings → Devices & Services → **Add Integration** → **Resideo**.
 4. Sign in with your Resideo email/password, or paste a refresh token.
