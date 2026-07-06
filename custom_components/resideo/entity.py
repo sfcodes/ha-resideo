@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+from homeassistant.const import UnitOfTemperature
+from homeassistant.core import CALLBACK_TYPE, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .aioresideo import (
@@ -16,16 +21,25 @@ from .aioresideo import (
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import ResideoDataUpdateCoordinator, ResideoDeviceData
 
+# After a write, force a confirming refresh this many seconds later — long enough for the
+# device to apply the command and the shadow to reflect it (~8s observed live).
+RECONCILE_DELAY = 10  # seconds
+
 
 class ResideoEntity(CoordinatorEntity[ResideoDataUpdateCoordinator]):
-    """Base entity bound to one Resideo thermostat (keyed by MAC)."""
+    """Base entity bound to one Resideo thermostat (keyed by MAC).
+
+    Subclasses must set their own ``_attr_unique_id`` (suffixed per entity).
+    """
 
     _attr_has_entity_name = True
+    # When False the entity stays available while the thermostat is offline — used by the
+    # connectivity sensor, whose whole job is to report that offline state as "off".
+    _requires_device_online: bool = True
 
     def __init__(self, coordinator: ResideoDataUpdateCoordinator, mac: str) -> None:
         super().__init__(coordinator)
         self._mac = mac
-        self._attr_unique_id = mac
 
     @property
     def _device_data(self) -> ResideoDeviceData | None:
@@ -58,7 +72,17 @@ class ResideoEntity(CoordinatorEntity[ResideoDataUpdateCoordinator]):
     @property
     def available(self) -> bool:
         device = self.device
-        return super().available and device is not None and device.online
+        if not super().available or device is None:
+            return False
+        return device.online or not self._requires_device_online
+
+    @property
+    def device_temperature_unit(self) -> str:
+        """The device's configured display unit — the unit its temperatures are reported in."""
+        config = self.configuration
+        if config is not None and config.temperature_units == "C":
+            return UnitOfTemperature.CELSIUS
+        return UnitOfTemperature.FAHRENHEIT
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -122,3 +146,88 @@ class ResideoAccessoryEntity(ResideoEntity):
             serial_number=accessory.serial_number if accessory else None,
             via_device=(DOMAIN, self._mac),
         )
+
+
+class OptimisticWriteMixin:
+    """Optimistic-write plumbing shared by every writable Resideo entity.
+
+    Mix in **before** ``ResideoEntity``/``ResideoAccessoryEntity`` in the class bases.
+
+    The consumer API is asynchronous (``202`` = accepted, not applied) and the shadow lags a
+    write by a few seconds, so a successful write is shown immediately from ``_optimistic``
+    and reconciled against later data:
+
+      - every coordinator update drops the optimistic values the fresh data now confirms
+        (compared via :meth:`_confirmed_values`), so the UI never flickers on a stale read;
+      - a forced reconcile refresh ``_reconcile_delay`` seconds after the last write clears
+        whatever remains, so the UI always converges to the device's reported truth. Entities
+        whose writes are eventually-consistent (no timely read-back, e.g. remote-sensor
+        sensitivity) set ``_reconcile_delay = None`` and rely on confirmation alone.
+    """
+
+    _reconcile_delay: float | None = RECONCILE_DELAY
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._optimistic: dict[str, Any] = {}
+        self._reconcile_unsub: CALLBACK_TYPE | None = None
+
+    # -- subclass hooks --------------------------------------------------------
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        """Optimistic key -> the value the device currently reports (``None`` = no data)."""
+        raise NotImplementedError
+
+    @callback
+    def _on_optimistic_cleared(self, key: str) -> None:
+        """A key was confirmed/cleared — pop shared coordinator overrides here if any."""
+
+    # -- plumbing ---------------------------------------------------------------
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        if self._optimistic:
+            confirmed = self._confirmed_values()
+            if confirmed is not None:
+                for key, value in confirmed.items():
+                    if key in self._optimistic and self._optimistic[key] == value:
+                        del self._optimistic[key]
+                        self._on_optimistic_cleared(key)
+        super()._handle_coordinator_update()
+
+    async def _async_post_write(self, values: dict[str, Any]) -> None:
+        """Reflect a just-accepted write immediately and schedule its reconciliation.
+
+        Schedules the coordinator's debounced resync rather than forcing an immediate
+        refresh: the optimistic value already covers the UI, the push stream confirms
+        merged facets in ~1-3 s, and the debounce lets the write settle on the cloud
+        before the re-read.
+        """
+        self._optimistic.update(values)
+        self.async_write_ha_state()
+        self.coordinator.schedule_resync()
+        self._schedule_reconcile()
+
+    def _schedule_reconcile(self) -> None:
+        """Force one refresh after the device has had time to apply, then drop any remaining
+        optimistic values so the UI converges to the device's reported truth."""
+        if self._reconcile_delay is None:
+            return
+        if self._reconcile_unsub is not None:
+            self._reconcile_unsub()
+
+        async def _reconcile(_now: Any) -> None:
+            self._reconcile_unsub = None
+            await self.coordinator.async_refresh()
+            if self._optimistic:
+                for key in list(self._optimistic):
+                    del self._optimistic[key]
+                    self._on_optimistic_cleared(key)
+                self.async_write_ha_state()
+
+        self._reconcile_unsub = async_call_later(self.hass, self._reconcile_delay, _reconcile)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel a pending reconcile so it can't fire after the entity is gone."""
+        if self._reconcile_unsub is not None:
+            self._reconcile_unsub()
+            self._reconcile_unsub = None
+        await super().async_will_remove_from_hass()

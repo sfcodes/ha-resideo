@@ -8,7 +8,7 @@ is toggled by a separate ``switch`` (see ``switch.py``).
 
 Writes are optimistic: the consumer API is asynchronous (``202`` means *accepted*, not
 *applied*) and the device shadow lags a few seconds, so a successful write is reflected in
-the UI immediately and reconciled against the next poll (see ``_async_post_write``).
+the UI immediately and reconciled against later data (see ``OptimisticWriteMixin``).
 """
 
 from __future__ import annotations
@@ -24,11 +24,10 @@ from homeassistant.components.climate import (
     HVACMode,
 )
 from homeassistant.components.climate.const import FAN_AUTO, FAN_ON, PRESET_NONE
-from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.const import ATTR_TEMPERATURE
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.event import async_call_later
 
 from .aioresideo.const import (
     FAN_AUTO as RES_FAN_AUTO,
@@ -53,7 +52,10 @@ from .aioresideo.const import (
 )
 from .aioresideo.exceptions import ResideoError
 from .coordinator import ResideoConfigEntry, ResideoDataUpdateCoordinator
-from .entity import ResideoEntity
+from .entity import OptimisticWriteMixin, ResideoEntity
+
+# Writes are commands; serialize service calls per platform (reads are pure push).
+PARALLEL_UPDATES = 1
 
 # Resideo SystemSwitch <-> HA HVACMode. TODO: EmergencyHeat has no direct HA mode.
 RESIDEO_TO_HVAC: dict[str, HVACMode] = {
@@ -111,10 +113,6 @@ RESIDEO_TO_HA_FAN: dict[str, str] = {v: k for k, v in HA_TO_RESIDEO_FAN.items()}
 # device's reported Positions order (On, Auto, Circulate), for parity with the app.
 _FAN_MODE_ORDER = [FAN_AUTO, FAN_CIRCULATE, FAN_ON]
 
-# After a write, force a confirming poll this many seconds later — long enough for the
-# device to apply the command and the shadow to reflect it (~8s observed live).
-RECONCILE_DELAY = 10  # seconds
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -126,7 +124,7 @@ async def async_setup_entry(
     async_add_entities(ResideoClimate(coordinator, mac) for mac in coordinator.data)
 
 
-class ResideoClimate(ResideoEntity, ClimateEntity):
+class ResideoClimate(OptimisticWriteMixin, ResideoEntity, ClimateEntity):
     """A Resideo thermostat as an HA climate entity."""
 
     _attr_name = None  # use the device's own name
@@ -141,46 +139,45 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
     ) -> None:
         super().__init__(coordinator, mac)
         self._attr_unique_id = f"{mac}_climate"
-        # Optimistic overrides keyed by facet ("hvac_mode"/"fan_mode"/"cool_setpoint"/
-        # "heat_setpoint"); set on a successful write, cleared once a poll confirms them.
-        self._optimistic: dict[str, Any] = {}
-        self._reconcile_unsub: CALLBACK_TYPE | None = None
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        # Drop optimistic values the freshly polled shadow now confirms, so the UI stops
-        # overriding once the device has caught up (and never flickers on a stale poll).
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        """Current device truth per optimistic facet (see ``OptimisticWriteMixin``)."""
         device = self.device
-        if device is not None and self._optimistic:
-            hvac = (
+        if device is None:
+            return None
+        return {
+            "hvac_mode": (
                 HVACMode.HEAT
                 if device.system_switch == SYSTEM_SWITCH_EMERGENCY_HEAT
                 else RESIDEO_TO_HVAC.get(device.system_switch)
-            )
-            confirmed = {
-                "hvac_mode": hvac,
-                "fan_mode": (
-                    RESIDEO_TO_HA_FAN.get(device.fan_position)
-                    if device.fan_position is not None
-                    else None
-                ),
-                "cool_setpoint": device.cool_setpoint,
-                "heat_setpoint": device.heat_setpoint,
-                "preset": RESIDEO_STATUS_TO_PRESET.get(device.setpoint_status),
-            }
-            for key, value in confirmed.items():
-                if key in self._optimistic and self._optimistic[key] == value:
-                    del self._optimistic[key]
-        super()._handle_coordinator_update()
+            ),
+            "fan_mode": (
+                RESIDEO_TO_HA_FAN.get(device.fan_position)
+                if device.fan_position is not None
+                else None
+            ),
+            "cool_setpoint": device.cool_setpoint,
+            "heat_setpoint": device.heat_setpoint,
+            "preset": RESIDEO_STATUS_TO_PRESET.get(device.setpoint_status),
+        }
 
     @property
     def supported_features(self) -> ClimateEntityFeature:
         # In Auto (heat_cool) the user sets a heat/cool range; in Heat/Cool a single setpoint.
-        features = ClimateEntityFeature.FAN_MODE
+        features = ClimateEntityFeature(0)
         if self.hvac_mode == HVACMode.HEAT_COOL:
             features |= ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
         else:
             features |= ClimateEntityFeature.TARGET_TEMPERATURE
+        # Only claim FAN_MODE when the device has a controllable fan (fan_modes is None on a
+        # fanless system whose /configuration reports no positions).
+        if self.fan_modes:
+            features |= ClimateEntityFeature.FAN_MODE
+        # HA only exposes the climate.turn_on/turn_off/toggle services when these features are
+        # declared; the ClimateEntity defaults (off -> OFF, on -> first non-off mode) apply.
+        modes = self.hvac_modes
+        if HVACMode.OFF in modes and len(modes) > 1:
+            features |= ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
         # Only expose the hold-preset control when there's an actual choice. With the schedule off
         # the sole reachable status is PermanentHold, so a single-option selector is hidden.
         if len(self.preset_modes) > 1:
@@ -190,10 +187,7 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
     # --- capabilities derived from /configuration (with safe fallbacks) ------
     @property
     def temperature_unit(self) -> str:
-        config = self.configuration
-        if config and config.temperature_units == "C":
-            return UnitOfTemperature.CELSIUS
-        return UnitOfTemperature.FAHRENHEIT
+        return self.device_temperature_unit
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
@@ -213,12 +207,13 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
         return ordered
 
     @property
-    def fan_modes(self) -> list[str]:
+    def fan_modes(self) -> list[str] | None:
         config = self.configuration
-        positions = config.fan_positions if config else []
-        modes = [RESIDEO_TO_HA_FAN[p] for p in positions if p in RESIDEO_TO_HA_FAN]
+        if config is None or not config.reported:
+            return self._attr_fan_modes  # no capability data -> sane defaults
+        modes = [RESIDEO_TO_HA_FAN[p] for p in config.fan_positions if p in RESIDEO_TO_HA_FAN]
         if not modes:
-            return self._attr_fan_modes
+            return None  # fanless system -> no fan control (FAN_MODE feature is gated on this)
         rank = {m: i for i, m in enumerate(_FAN_MODE_ORDER)}
         return sorted(modes, key=lambda m: rank.get(m, len(rank)))
 
@@ -270,9 +265,16 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
 
     @property
     def hvac_action(self) -> HVACAction | None:
-        if not self.device:
+        device = self.device
+        if not device:
             return None
-        return RESIDEO_TO_ACTION.get(self.device.operation_mode)
+        action = RESIDEO_TO_ACTION.get(device.operation_mode)
+        if self.hvac_mode == HVACMode.OFF:
+            action = HVACAction.OFF
+        # Not calling for heat/cool but the blower is running (fan On/Circulate) -> FAN.
+        if action in (HVACAction.IDLE, HVACAction.OFF) and device.fan_request:
+            return HVACAction.FAN
+        return action
 
     @property
     def target_temperature(self) -> float | None:
@@ -332,6 +334,23 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
             return None
         return RESIDEO_TO_HA_FAN.get(self.device.fan_position)
 
+    def _write_hold_status(self) -> str:
+        """The ``SetpointStatus`` a setpoint write should carry.
+
+        App parity: while following an enabled schedule (NoHold) — or already in a temporary
+        hold — a setpoint change becomes a TemporaryHold that reverts at the next schedule
+        period. Otherwise (schedule off, permanent/special holds) it is a PermanentHold.
+        TemporaryHold-on-write is schema-confirmed — TODO verify live.
+        """
+        device = self.device
+        if (
+            device
+            and device.schedule_enabled
+            and device.setpoint_status in (SETPOINT_NO_HOLD, SETPOINT_TEMPORARY_HOLD)
+        ):
+            return SETPOINT_TEMPORARY_HOLD
+        return SETPOINT_PERMANENT_HOLD
+
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set a single target (Heat/Cool) or a heat/cool range (Auto)."""
         if self.hvac_mode == HVACMode.HEAT_COOL:
@@ -350,12 +369,17 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
             key = "heat_setpoint"
             call = self.coordinator.api.async_set_heat_setpoint
         else:
-            return
+            raise ServiceValidationError(
+                "Set an HVAC mode (heat/cool/auto) before setting a target temperature."
+            )
+        status = self._write_hold_status()
         try:
-            await call(self._mac, temperature)
+            await call(self._mac, temperature, status=status)
         except ResideoError as err:
             raise HomeAssistantError(f"Failed to set temperature: {err}") from err
-        await self._async_post_write({key: temperature})
+        await self._async_post_write(
+            {key: temperature, "preset": RESIDEO_STATUS_TO_PRESET.get(status)}
+        )
 
     async def _async_set_range(
         self, low: float | None, high: float | None
@@ -363,14 +387,19 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
         """Write the Auto-mode heat (low) and cool (high) setpoints."""
         if low is None and high is None:
             return
-        optimistic: dict[str, Any] = {}
+        status = self._write_hold_status()
+        optimistic: dict[str, Any] = {"preset": RESIDEO_STATUS_TO_PRESET.get(status)}
         try:
             # Cool first, then heat — both are independent PUTs (each 202-verified).
             if high is not None:
-                await self.coordinator.api.async_set_cool_setpoint(self._mac, high)
+                await self.coordinator.api.async_set_cool_setpoint(
+                    self._mac, high, status=status
+                )
                 optimistic["cool_setpoint"] = high
             if low is not None:
-                await self.coordinator.api.async_set_heat_setpoint(self._mac, low)
+                await self.coordinator.api.async_set_heat_setpoint(
+                    self._mac, low, status=status
+                )
                 optimistic["heat_setpoint"] = low
         except ResideoError as err:
             raise HomeAssistantError(f"Failed to set temperature range: {err}") from err
@@ -422,37 +451,3 @@ class ResideoClimate(ResideoEntity, ClimateEntity):
         except ResideoError as err:
             raise HomeAssistantError(f"Failed to set fan mode: {err}") from err
         await self._async_post_write({"fan_mode": fan_mode})
-
-    # --- optimistic-write plumbing -------------------------------------------
-    async def _async_post_write(self, optimistic: dict[str, Any]) -> None:
-        """Reflect a just-accepted write immediately, force a refresh, and schedule a
-        reconcile poll. The consumer API is async (202 != applied), so the immediate
-        refresh may still read the pre-apply shadow; the optimistic value covers that gap.
-        """
-        self._optimistic.update(optimistic)
-        self.async_write_ha_state()
-        # Forced (non-debounced) refresh, mirroring the official ``lyric`` integration.
-        await self.coordinator.async_refresh()
-        self._schedule_reconcile()
-
-    def _schedule_reconcile(self) -> None:
-        """Force one more refresh after the device has had time to apply, then drop any
-        remaining optimistic values so the UI converges to the device's reported truth."""
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-
-        async def _reconcile(_now: Any) -> None:
-            self._reconcile_unsub = None
-            await self.coordinator.async_refresh()
-            if self._optimistic:
-                self._optimistic.clear()
-                self.async_write_ha_state()
-
-        self._reconcile_unsub = async_call_later(self.hass, RECONCILE_DELAY, _reconcile)
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Cancel a pending reconcile so it can't fire after the entity is gone."""
-        if self._reconcile_unsub is not None:
-            self._reconcile_unsub()
-            self._reconcile_unsub = None
-        await super().async_will_remove_from_hass()
