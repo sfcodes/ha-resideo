@@ -45,7 +45,7 @@ polling. Climate (temperature, humidity, HVAC mode, fan mode) is verified end-to
 python -m venv .venv && source .venv/bin/activate
 pip install ruff -r requirements.txt -r requirements.test.txt
 ruff check .
-pytest
+pytest   # tests/aioresideo (client) + tests/resideo (HA integration layer)
 ```
 
 The repo doubles as a local Home Assistant dev instance under `config/` (gitignored), with
