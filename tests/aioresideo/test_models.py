@@ -5,8 +5,6 @@ These lock in the mapping the HA climate entity relies on (resideo-api-spec.md Â
 
 from __future__ import annotations
 
-import pytest
-
 from custom_components.resideo.aioresideo import (
     ResideoClient,
     ResideoConfiguration,
@@ -158,9 +156,3 @@ def test_rooms_and_accessories(rooms: dict) -> None:
     assert acc.exclude_motion is False
     assert acc.software_revision == "2.1.5.0"
     assert acc.serial_number == "000000000000"
-
-
-@pytest.mark.skip(reason="TODO: client transport tests need aioresponses mocking (see plan)")
-def test_client_request_roundtrip_TODO() -> None:
-    """Placeholder: mock api.resideo.com and assert headers (bearer + Ocp-Apim key),
-    202 handling, and the retry-once-on-401 path in ResideoClient._request."""
