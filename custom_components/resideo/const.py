@@ -19,8 +19,5 @@ MANUFACTURER = "Resideo"
 
 # --- config entry data keys --------------------------------------------------
 CONF_REFRESH_TOKEN = "refresh_token"
-CONF_ACCESS_TOKEN = "access_token"
-CONF_TOKEN_EXPIRES_AT = "token_expires_at"
-CONF_EMAIL = "email"
 
 # Reads are push-only (Azure SignalR; see coordinator.py) — there is no periodic poll interval.

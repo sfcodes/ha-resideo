@@ -11,6 +11,7 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .aioresideo import Resideo
@@ -19,7 +20,7 @@ from .aioresideo.exceptions import (
     ResideoConnectionError,
     ResideoError,
 )
-from .const import CONF_REFRESH_TOKEN, PLATFORMS
+from .const import CONF_REFRESH_TOKEN, DOMAIN, PLATFORMS
 from .coordinator import ResideoConfigEntry, ResideoDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,3 +69,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ResideoConfigEntry) -> b
 async def async_unload_entry(hass: HomeAssistant, entry: ResideoConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: ResideoConfigEntry, device_entry: dr.DeviceEntry
+) -> bool:
+    """Allow deleting devices (thermostats / room sensors) the account no longer reports."""
+    coordinator = entry.runtime_data
+    current: set[str] = set()
+    for mac, data in coordinator.data.items():
+        current.add(mac)
+        for room, accessory in data.rooms.air_sensor_accessories():
+            current.add(f"{mac}_room{room.id}_acc{accessory.accessory_id}")
+    return not any(
+        domain == DOMAIN and identifier in current
+        for domain, identifier in device_entry.identifiers
+    )

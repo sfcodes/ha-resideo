@@ -53,12 +53,12 @@ async def main():
 import asyncio
 from custom_components.resideo.aioresideo import apply_live_feed  # merge a push delta into a cached shadow/rooms dict
 
-targets = await api.async_get_signalr_targets()      # [{node_id, name, device_ids}], one per location
+targets = await api.async_get_signalr_targets()      # [ResideoLocation(node_id, name, device_ids)], one per location
 
 def on_event(ev):                                    # ev: ResideoLiveFeed | ResideoChangeConfirm
     ...  # e.g. new_shadow, new_rooms = apply_live_feed(shadow, rooms, ev)
 
-stream = api.create_stream(targets[0]["node_id"], targets[0]["device_ids"], on_event)
+stream = api.create_stream(targets[0].node_id, list(targets[0].device_ids), on_event)
 await stream.async_connect_once_or_raise()           # negotiate → subscribe → activate (/priority)
 asyncio.create_task(stream.async_run())              # supervises: keepalive, reconnect, refresh before expiry
 ```
@@ -69,7 +69,14 @@ reconnecting shortly before `SubscriptionExpiration` (it can't be extended in pl
 ## Auth & headers
 
 - Auth0 PKCE (`login.resideo.com`), scopes `openid profile email offline_access`. Access tokens
-  last ~1h; refresh tokens rotate.
+  last ~1h; refresh tokens rotate (refreshes are serialized in-process — Auth0 reuse detection
+  can revoke the grant on a concurrent double-refresh).
 - Every API call sends `Authorization: Bearer <token>` **and**
   `Ocp-Apim-Subscription-Key: <prod APIM key>` (mandatory on the `devsrv` command service).
 - Writes are async: they return `202 {"TransactionId": ...}`; re-read state to confirm.
+
+## Errors
+
+All failures raise a `ResideoError` subclass: `ResideoAuthError` (bad credentials / expired
+refresh token / 401), `ResideoConnectionError` (transport failures **including timeouts**),
+`ResideoApiError` (any other non-2xx, carrying `status` + parsed `body`).

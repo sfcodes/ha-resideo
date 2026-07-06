@@ -41,7 +41,6 @@ OCP_APIM_SUBSCRIPTION_KEY = "b60885e8a9b44680a29ea1f03452878a"
 DEVSRV_DEVICE = "/devsrv/api/v2/device/{mac}"  # thermostat state + commands (primary)
 RIS_PUBLIC_API = "/ris-public-api/api/v1"
 ACCOUNTS_ENDPOINT = f"{RIS_PUBLIC_API}/accounts"
-SCHEDULE_ENDPOINT = RIS_PUBLIC_API + "/devices/{mac}/schedule"
 
 # Every write body carries this channel id; writes return ``202 {"TransactionId": ...}``.
 DEFAULT_CHANNEL_ID = "ds-notification-service"
