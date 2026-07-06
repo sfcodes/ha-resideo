@@ -26,6 +26,9 @@ from .coordinator import (
 )
 from .entity import ResideoAccessoryEntity, ResideoEntity
 
+# Reads are pure push off the coordinator — no per-entity update work to limit.
+PARALLEL_UPDATES = 0
+
 DIAG = EntityCategory.DIAGNOSTIC
 
 
@@ -34,6 +37,9 @@ DIAG = EntityCategory.DIAGNOSTIC
 class ResideoBinarySensorEntityDescription(BinarySensorEntityDescription):
     value_fn: Callable[[ResideoDeviceData], bool | None]
     exists_fn: Callable[[ResideoDeviceData], bool] = lambda _data: True
+    # False keeps the entity available while the thermostat is offline — for the connectivity
+    # sensor, whose whole job is to report that offline state as "off" (not go unavailable).
+    requires_online: bool = True
 
 
 def _ta(d: ResideoDeviceData):
@@ -57,6 +63,7 @@ DEVICE_BINARY_SENSORS: tuple[ResideoBinarySensorEntityDescription, ...] = (
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_category=DIAG,
         value_fn=lambda d: d.thermostat.online,
+        requires_online=False,
     ),
     ResideoBinarySensorEntityDescription(
         key="fan_running", translation_key="fan_running",
@@ -168,6 +175,7 @@ class ResideoBinarySensor(ResideoEntity, BinarySensorEntity):
         super().__init__(coordinator, mac)
         self.entity_description = description
         self._attr_unique_id = f"{mac}_{description.key}"
+        self._requires_device_online = description.requires_online
 
     @property
     def is_on(self) -> bool | None:
