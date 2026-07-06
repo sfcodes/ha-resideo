@@ -73,6 +73,8 @@ class ResideoStream:
         self._feed_expiry = 0.0  # time.time() epoch of the feed's SubscriptionExpiration
         self._closing = False
         self._invocation = 0
+        self._subscribe_id: str | None = None  # invocationId of the pending SubscribeSignalRV2
+        self._fatal: str | None = None  # a completion error that must tear the connection down
 
     # -- public API -----------------------------------------------------------
     async def async_connect_once_or_raise(self, timeout: float = 30.0) -> None:
@@ -126,13 +128,19 @@ class ResideoStream:
         neg = await self._client.async_signalr_negotiate()
         try:
             self._ws = await self._client.session.ws_connect(neg["wss_url"], heartbeat=None)
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, TimeoutError) as err:
             raise ResideoConnectionError(f"SignalR WSS connect failed: {err}") from err
         await self._ws.send_str(_HANDSHAKE_FRAME)
         await self._read_handshake_ack()
-        await self._send_invocation("SubscribeSignalRV2", [self._location_node_id])
+        self._fatal = None
+        self._subscribe_id = await self._send_invocation(
+            "SubscribeSignalRV2", [self._location_node_id]
+        )
         self._last_frame = time.monotonic()
         self._feed_expiry = time.time() + SIGNALR_FEED_TTL_FALLBACK
+        # Keepalive must run before the (potentially slow) resync below, or a degraded REST
+        # API would starve the fresh socket of pings and the server would drop it mid-setup.
+        self._keepalive_task = asyncio.create_task(self._keepalive())
         # Resync first (so HA has fresh data); its /priority reads also help warm the feed.
         if self._on_connected is not None:
             try:
@@ -140,7 +148,6 @@ class ResideoStream:
             except Exception:
                 _LOGGER.warning("SignalR resync-on-connect failed", exc_info=True)
         await self._activate_feed()  # GET /priority per device -> starts LiveFeedEvents
-        self._keepalive_task = asyncio.create_task(self._keepalive())
         _LOGGER.debug("SignalR connected + subscribed + activated (%s)", self._location_node_id)
 
     async def _read_handshake_ack(self) -> None:
@@ -168,6 +175,8 @@ class ResideoStream:
                 self._last_frame = time.monotonic()
                 for frame in _split(msg.data):
                     self._handle_frame(frame)
+                if self._fatal:  # e.g. the subscribe was rejected -> reconnect, don't sit silent
+                    raise ResideoConnectionError(self._fatal)
             elif msg.type in (
                 aiohttp.WSMsgType.CLOSE,
                 aiohttp.WSMsgType.CLOSING,
@@ -185,7 +194,12 @@ class ResideoStream:
             return
         if mtype == 3:  # completion of one of our invocations
             if obj.get("error"):
-                _LOGGER.debug("SignalR invocation error: %s", obj["error"])
+                if obj.get("invocationId") == self._subscribe_id:
+                    # A rejected subscribe leaves a connected-but-event-less socket that the
+                    # stall watchdog never catches (server pings keep it "alive") — treat as fatal.
+                    self._fatal = f"SubscribeSignalRV2 rejected: {obj['error']}"
+                else:
+                    _LOGGER.debug("SignalR invocation error: %s", obj["error"])
             return
         if mtype == 1 and obj.get("target") == "events":
             for arg in obj.get("arguments", []) or []:
@@ -242,18 +256,21 @@ class ResideoStream:
             _LOGGER.debug("SignalR keepalive task error", exc_info=True)
 
     # -- low-level ------------------------------------------------------------
-    async def _send_invocation(self, target: str, arguments: list[object]) -> None:
+    async def _send_invocation(self, target: str, arguments: list[object]) -> str:
+        """Send a hub invocation; returns its ``invocationId`` (to match its completion)."""
         assert self._ws is not None
         self._invocation += 1
+        invocation_id = str(self._invocation)
         frame = json.dumps(
             {
                 "type": 1,
-                "invocationId": str(self._invocation),
+                "invocationId": invocation_id,
                 "target": target,
                 "arguments": arguments,
             }
         )
         await self._ws.send_str(frame + RS)
+        return invocation_id
 
     async def _teardown_socket(self) -> None:
         task = self._keepalive_task

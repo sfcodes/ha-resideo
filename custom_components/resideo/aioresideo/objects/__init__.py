@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .account import ResideoAccountDevice
+from .account import ResideoAccountDevice, ResideoLocation
 from .base import ResideoBaseObject
 from .configuration import ResideoConfiguration
 from .device import ResideoThermostat
@@ -18,6 +18,7 @@ __all__ = [
     "ResideoConfiguration",
     "ResideoEvent",
     "ResideoLiveFeed",
+    "ResideoLocation",
     "ResideoPriority",
     "ResideoRoom",
     "ResideoRooms",

@@ -217,7 +217,8 @@ class ResideoAuth:
                             f"step6 token exchange returned {r.status}: {text[:200]}"
                         )
                     return await r.json(content_type=None)
-            except aiohttp.ClientError as err:
+            except (aiohttp.ClientError, TimeoutError) as err:
+                # aiohttp raises bare TimeoutError (not a ClientError) on timeout expiry.
                 raise ResideoConnectionError(f"Auth0 login transport error: {err}") from err
 
     async def refresh(self, refresh_token: str) -> dict[str, Any]:
@@ -238,5 +239,5 @@ class ResideoAuth:
                     text = await r.text()
                     raise ResideoAuthError(f"refresh failed {r.status}: {text[:200]}")
                 return await r.json(content_type=None)
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, TimeoutError) as err:
             raise ResideoConnectionError(f"token refresh transport error: {err}") from err

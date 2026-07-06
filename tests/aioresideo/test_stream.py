@@ -48,9 +48,9 @@ def test_iter_locations(accounts) -> None:
     targets = ResideoClient.iter_locations(accounts)
     assert len(targets) == 1
     target = targets[0]
-    assert target["node_id"] == (
+    assert target.node_id == (
         "Q29uc3VtZXJEZXZpY2VMb2NhdGlvbjowMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDA="
     )
-    assert target["name"] == "Home"
+    assert target.name == "Home"
     # all devices in the location (thermostat + smoke); the caller intersects with thermostats
-    assert target["device_ids"] == ["AABBCCDDEEFF", "DDEEFFAABBCC"]
+    assert target.device_ids == ("AABBCCDDEEFF", "DDEEFFAABBCC")

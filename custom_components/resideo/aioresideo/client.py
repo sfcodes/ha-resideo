@@ -11,6 +11,7 @@ few seconds, so callers should re-read state to confirm.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
 import logging
@@ -35,6 +36,7 @@ from .const import (
     TOKEN_REFRESH_MARGIN,
 )
 from .exceptions import ResideoApiError, ResideoAuthError, ResideoConnectionError
+from .objects.account import ResideoLocation
 
 # Called with the latest token dict whenever tokens are refreshed/rotated, so the caller
 # (e.g. the HA integration) can persist the new refresh token. May be sync or async.
@@ -61,6 +63,9 @@ class ResideoClient:
         self._access_token = access_token
         self._expires_at = float(expires_at) if expires_at is not None else 0.0
         self._token_updated_cb = token_updated_cb
+        # Single-flight guard: Auth0 rotates refresh tokens with reuse detection, so two
+        # concurrent refreshes with the same token can revoke the whole grant family.
+        self._refresh_lock = asyncio.Lock()
 
     @property
     def session(self) -> aiohttp.ClientSession:
@@ -95,18 +100,26 @@ class ResideoClient:
         if inspect.isawaitable(result):
             await result
 
+    def _token_is_fresh(self) -> bool:
+        return bool(
+            self._access_token and (self._expires_at - time.time()) > TOKEN_REFRESH_MARGIN
+        )
+
     async def async_ensure_token(self) -> str:
         """Return a valid access token, refreshing it when within the expiry margin."""
-        if self._access_token and (self._expires_at - time.time()) > TOKEN_REFRESH_MARGIN:
+        if self._token_is_fresh():
+            return self._access_token  # type: ignore[return-value]
+        async with self._refresh_lock:
+            if self._token_is_fresh():  # a concurrent caller refreshed while we waited
+                return self._access_token  # type: ignore[return-value]
+            if not self._refresh_token:
+                raise ResideoAuthError("No refresh token available — re-authenticate")
+            new = await self._auth.refresh(self._refresh_token)
+            self._apply_tokens(new)
+            await self._fire_token_updated()
+            if not self._access_token:
+                raise ResideoAuthError("Refresh succeeded but returned no access_token")
             return self._access_token
-        if not self._refresh_token:
-            raise ResideoAuthError("No refresh token available — re-authenticate")
-        new = await self._auth.refresh(self._refresh_token)
-        self._apply_tokens(new)
-        await self._fire_token_updated()
-        if not self._access_token:
-            raise ResideoAuthError("Refresh succeeded but returned no access_token")
-        return self._access_token
 
     # -- transport ------------------------------------------------------------
     async def _request(self, method: str, endpoint: str, *, _retry: bool = True, **kwargs: Any) -> Any:
@@ -128,7 +141,8 @@ class ResideoClient:
                 timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT),
                 **kwargs,
             )
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, TimeoutError) as err:
+            # aiohttp raises bare TimeoutError (not a ClientError) on total-timeout expiry.
             raise ResideoConnectionError(f"{method} {url} failed: {err}") from err
         _LOGGER.debug("%s %s -> HTTP %s", method, url, resp.status)
         try:
@@ -152,6 +166,8 @@ class ResideoClient:
                 return json.loads(text)
             except ValueError:
                 return text
+        except TimeoutError as err:  # timed out while reading the body
+            raise ResideoConnectionError(f"{method} {url} read timed out") from err
         finally:
             await resp.release()
 
@@ -236,7 +252,7 @@ class ResideoClient:
                 data=b"",
                 timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT),
             )
-        except aiohttp.ClientError as err:
+        except (aiohttp.ClientError, TimeoutError) as err:
             raise ResideoConnectionError(f"Azure SignalR negotiate failed: {err}") from err
         try:
             if not 200 <= resp.status < 300:
@@ -246,6 +262,8 @@ class ResideoClient:
                 )
             text = await resp.text()
             return json.loads(text) if text else {}
+        except TimeoutError as err:
+            raise ResideoConnectionError("Azure SignalR negotiate read timed out") from err
         finally:
             await resp.release()
 
@@ -440,29 +458,24 @@ class ResideoClient:
         return out
 
     @staticmethod
-    def iter_locations(accounts: dict[str, Any]) -> list[dict[str, Any]]:
+    def iter_locations(accounts: dict[str, Any]) -> list[ResideoLocation]:
         """Group the account graph by location for SignalR (spec §9.2).
 
-        Returns ``[{"node_id", "name", "device_ids": [MAC, ...]}]``. ``node_id`` is the
-        location's raw base64 ``id`` (``ConsumerDeviceLocation:<uuid>``) — the exact argument
-        ``SubscribeSignalRV2`` expects. ``device_ids`` are **all** devices in the location; the
-        caller intersects with the thermostats it cares about.
+        One :class:`ResideoLocation` per location — see its docstring for field semantics.
         """
-        out: list[dict[str, Any]] = []
+        out: list[ResideoLocation] = []
         data = accounts.get("data", {}) or {}
         for cu in data.get("consumerUsers", []) or []:
             ca = cu.get("consumerAccount", {}) or {}
             for loc in ca.get("locations", []) or []:
-                device_ids = [
+                device_ids = tuple(
                     mac
                     for cd in loc.get("consumerDevices", []) or []
                     if (mac := (cd.get("device", {}) or {}).get("deviceId"))
-                ]
+                )
                 out.append(
-                    {
-                        "node_id": loc.get("id"),
-                        "name": loc.get("name"),
-                        "device_ids": device_ids,
-                    }
+                    ResideoLocation(
+                        node_id=loc.get("id"), name=loc.get("name"), device_ids=device_ids
+                    )
                 )
         return out

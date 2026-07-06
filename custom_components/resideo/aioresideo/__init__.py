@@ -30,13 +30,14 @@ from .objects import (
     ResideoConfiguration,
     ResideoEvent,
     ResideoLiveFeed,
+    ResideoLocation,
     ResideoPriority,
     ResideoRoom,
     ResideoRooms,
     ResideoThermostat,
     parse_event,
 )
-from .stream import ResideoStream
+from .stream import ConnectedCallback, ErrorCallback, EventCallback, ResideoStream
 
 __version__ = "0.1.0"
 
@@ -94,8 +95,8 @@ class Resideo:
         return ResideoRooms(await self.client.get_rooms(mac))
 
     # -- real-time push (SignalR; see resideo-api-spec.md §9) -----------------
-    async def async_get_signalr_targets(self) -> list[dict[str, Any]]:
-        """Per-location SignalR targets ``[{node_id, name, device_ids}]`` (one stream each)."""
+    async def async_get_signalr_targets(self) -> list[ResideoLocation]:
+        """Per-location SignalR targets (one stream each)."""
         accounts = await self.client.get_accounts()
         return ResideoClient.iter_locations(accounts)
 
@@ -103,11 +104,20 @@ class Resideo:
         self,
         location_node_id: str,
         device_ids: list[str],
-        on_event: Any,
-        **callbacks: Any,
+        on_event: EventCallback,
+        *,
+        on_connected: ConnectedCallback | None = None,
+        on_error: ErrorCallback | None = None,
     ) -> ResideoStream:
         """Build a :class:`ResideoStream` for one location (caller drives ``async_run``/``async_stop``)."""
-        return ResideoStream(self.client, location_node_id, device_ids, on_event, **callbacks)
+        return ResideoStream(
+            self.client,
+            location_node_id,
+            device_ids,
+            on_event,
+            on_connected=on_connected,
+            on_error=on_error,
+        )
 
     # -- writes (passthrough to the client; see spec §4) ----------------------
     async def async_set_cool_setpoint(self, mac: str, value: float, **kw: Any) -> dict[str, Any]:
@@ -177,6 +187,9 @@ class Resideo:
 
 __all__ = [
     "LIVE_FEED_MERGED_PROPERTIES",
+    "ConnectedCallback",
+    "ErrorCallback",
+    "EventCallback",
     "Resideo",
     "ResideoAccessory",
     "ResideoAccountDevice",
@@ -191,6 +204,7 @@ __all__ = [
     "ResideoError",
     "ResideoEvent",
     "ResideoLiveFeed",
+    "ResideoLocation",
     "ResideoPriority",
     "ResideoRoom",
     "ResideoRooms",

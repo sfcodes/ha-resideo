@@ -1,10 +1,25 @@
-"""Account-graph device model (from GET /ris-public-api/api/v1/accounts)."""
+"""Account-graph models (from GET /ris-public-api/api/v1/accounts)."""
 
 from __future__ import annotations
 
 import base64
+from dataclasses import dataclass
 
 from .base import ResideoBaseObject
+
+
+@dataclass(frozen=True)
+class ResideoLocation:
+    """One consumer location — the unit of SignalR subscription (spec §9.2).
+
+    ``node_id`` is the location's raw base64 id (``ConsumerDeviceLocation:<uuid>``) — the exact
+    argument ``SubscribeSignalRV2`` expects. ``device_ids`` are **all** device MACs at the
+    location; the caller intersects with the devices it cares about.
+    """
+
+    node_id: str | None
+    name: str | None
+    device_ids: tuple[str, ...]
 
 
 class ResideoAccountDevice(ResideoBaseObject):
