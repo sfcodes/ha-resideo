@@ -3,5 +3,7 @@ pytest
 pytest-asyncio
 aioresponses
 # HA test harness for tests/resideo/ (pins the matching homeassistant version itself,
-# which satisfies the unpinned `homeassistant` in requirements.txt).
-pytest-homeassistant-custom-component
+# which satisfies the unpinned `homeassistant` in requirements.txt). Pinned: unpinned, pip
+# skips the newest release whenever it targets an HA beta and backtracks to a 2023 HA that no
+# longer installs. Newer than this, aiohttp 3.14 breaks aioresponses' mocks; bump both together.
+pytest-homeassistant-custom-component==0.13.339
