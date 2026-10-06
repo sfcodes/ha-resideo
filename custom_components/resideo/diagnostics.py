@@ -25,12 +25,15 @@ TO_REDACT = {
 
 # The account graph (/accounts) on top of the above: who the user is and where they live.
 # ``name`` covers location names, which are often a street address. ``id`` covers the
-# user/account/location/device node ids. Kept on purpose: ``countryCode``, ``locale``,
+# user/account/location/device node ids, and the two cross-references below carry the same
+# account and location ids under other names. Kept on purpose: ``countryCode``, ``locale``,
 # ``timeZone``, ``weatherLocationId``, ``globalDeviceType`` — the regional metadata that
 # decides things like which unit the cloud's outdoor temperature arrives in.
 ACCOUNT_TO_REDACT = TO_REDACT | {
     "id",
     "deviceId",
+    "consumerAccountId",
+    "consumerDeviceLocationId",
     "name",
     "firstName",
     "lastName",

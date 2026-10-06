@@ -27,7 +27,9 @@ from .aioresideo import (
     LIVE_FEED_MERGED_PROPERTIES,
     Resideo,
     ResideoAccessory,
+    ResideoAccountDevice,
     ResideoChangeConfirm,
+    ResideoClient,
     ResideoConfiguration,
     ResideoLiveFeed,
     ResideoLocation,
@@ -95,6 +97,9 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         self.api = api
         self._macs: list[str] = []
         self._targets: list[ResideoLocation] = []
+        # The account's country, read once at setup. It decides the unit of the outdoor
+        # temperature, the one reading that isn't always °F (see ``outdoor_temperature_unit``).
+        self.country_code: str | None = None
         self._streams: list[ResideoStream] = []
         # Settings (Feels Like, Adaptive Recovery, ...) and unmerged value-types carry no usable
         # value on the stream; a stream event schedules this debounced REST resync to fetch them.
@@ -118,10 +123,9 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         self._setpoint_limit_overrides: dict[str, dict[str, Any]] = {}
 
     async def _async_setup(self) -> None:
-        """One-time discovery: the thermostats + the per-location SignalR targets."""
+        """One-time discovery from the account graph: thermostats, SignalR targets, country."""
         try:
-            devices = await self.api.async_get_devices()
-            self._targets = await self.api.async_get_signalr_targets()
+            accounts = await self.api.async_get_accounts()
         except ResideoAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except ResideoUnavailableError as err:
@@ -129,6 +133,9 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
             raise UpdateFailed(unavailable_reason(err)) from err
         except (ResideoConnectionError, ResideoError) as err:
             raise UpdateFailed(str(err)) from err
+        devices = [ResideoAccountDevice(d) for d in ResideoClient.iter_devices(accounts)]
+        self._targets = ResideoClient.iter_locations(accounts)
+        self.country_code = ResideoClient.country_code(accounts)
         self._macs = [d.mac for d in devices if d.is_thermostat and d.mac]
         if not self._macs:
             # A stable account-level condition (e.g. only Lyric/LCC-platform devices, which
@@ -151,10 +158,11 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
                 "for those."
             )
         _LOGGER.debug(
-            "Discovered %d thermostat(s) %s across %d location(s)",
+            "Discovered %d thermostat(s) %s across %d location(s), account country %s",
             len(self._macs),
             self._macs,
             len(self._targets),
+            self.country_code,
         )
         async_clear_unavailable(self.hass, self.config_entry)
 

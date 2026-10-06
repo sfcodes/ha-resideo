@@ -36,6 +36,8 @@ async def test_diagnostics(
     assert location["name"] == REDACTED
     assert location["id"] == REDACTED
     assert location["consumerDevices"][0]["device"]["deviceId"] == REDACTED
+    assert location["consumerAccountId"] == REDACTED
+    assert location["consumerDevices"][0]["consumerDeviceLocationId"] == REDACTED
 
     (device,) = diag["devices"]
     assert device["shadow"]["DeviceId"] == REDACTED

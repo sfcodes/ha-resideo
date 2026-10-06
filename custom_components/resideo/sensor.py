@@ -32,7 +32,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
-from .aioresideo import ResideoAccessory
+from .aioresideo import ResideoAccessory, outdoor_temperature_unit
 from .coordinator import (
     ResideoConfigEntry,
     ResideoDataUpdateCoordinator,
@@ -53,6 +53,14 @@ class ResideoSensorEntityDescription(SensorEntityDescription):
 
     value_fn: Callable[[ResideoDeviceData], StateType]
     exists_fn: Callable[[ResideoDeviceData], bool] = lambda _data: True
+    # Overrides native_unit_of_measurement when the unit depends on the account, not the entity.
+    native_unit_fn: Callable[[ResideoDataUpdateCoordinator], str] | None = None
+
+
+def _outdoor_unit(coordinator: ResideoDataUpdateCoordinator) -> str:
+    if outdoor_temperature_unit(coordinator.country_code) == "C":
+        return UnitOfTemperature.CELSIUS
+    return UnitOfTemperature.FAHRENHEIT
 
 
 def _co2(d: ResideoDeviceData) -> StateType:
@@ -68,7 +76,8 @@ def _tvoc(d: ResideoDeviceData) -> StateType:
 DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
     # --- primary environment ---
     # Temperature payloads are always °F regardless of the device's display unit (see
-    # ResideoConfiguration.temperature_units) — HA converts for display.
+    # ResideoConfiguration.temperature_units) — HA converts for display. Outdoor temperature is
+    # the exception: it arrives in the account country's local unit (issue #7).
     ResideoSensorEntityDescription(
         key="indoor_temperature", translation_key="indoor_temperature",
         device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
@@ -78,7 +87,7 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
     ResideoSensorEntityDescription(
         key="outdoor_temperature", translation_key="outdoor_temperature",
         device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        native_unit_fn=_outdoor_unit,
         value_fn=lambda d: d.thermostat.outdoor_temperature,
     ),
     ResideoSensorEntityDescription(
@@ -396,6 +405,8 @@ class ResideoSensor(ResideoEntity, SensorEntity):
         super().__init__(coordinator, mac)
         self.entity_description = description
         self._attr_unique_id = f"{mac}_{description.key}"
+        if description.native_unit_fn is not None:
+            self._attr_native_unit_of_measurement = description.native_unit_fn(coordinator)
 
     @property
     def native_value(self) -> StateType:

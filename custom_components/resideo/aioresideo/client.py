@@ -480,6 +480,11 @@ class ResideoClient:
         return out
 
     @staticmethod
+    def country_code(accounts: dict[str, Any]) -> str | None:
+        """The account's ISO country code (e.g. ``US``, ``CA``), if the graph carries one."""
+        return (accounts.get("data", {}) or {}).get("countryCode") or None
+
+    @staticmethod
     def iter_locations(accounts: dict[str, Any]) -> list[ResideoLocation]:
         """Group the account graph by location for SignalR (spec §9.2).
 

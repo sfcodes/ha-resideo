@@ -13,10 +13,12 @@
             {
               "id": "Q29uc3VtZXJEZXZpY2VMb2NhdGlvbjowMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDA=",
               "name": "Home",
+              "consumerAccountId": "Q29uc3VtZXJBY2NvdW50OjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMA==",
               "consumerDevices": [
                 {
                   "id": "ConsumerDevice:11111111-1111-1111-1111-111111111111",
                   "name": "Master Bedroom",
+                  "consumerDeviceLocationId": "Q29uc3VtZXJEZXZpY2VMb2NhdGlvbjowMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDA=",
                   "device": {
                     "deviceId": "AABBCCDDEEFF",
                     "globalDeviceType": "Denali_S1200",

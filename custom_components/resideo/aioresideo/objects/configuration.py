@@ -52,7 +52,8 @@ class ResideoConfiguration(ResideoBaseObject):
         """"F" or "C" — display-unit metadata only, NOT the unit of any payload value.
 
         API payloads (shadow temps, setpoints, limits, rooms) are **always °F**, whatever this
-        says. Verified live 2026-08-10: switching the app to °C and a thermostat's faceplate to
+        says. The one exception is ``DisplayedOutdoorTemperature``, which follows the account's
+        country rather than this field (see ``outdoor_temperature_unit``). Verified live 2026-08-10: switching the app to °C and a thermostat's faceplate to
         °C changed no payload value and not even this field (it appears to be a provisioning-time
         snapshot; ``TemperatureUnitsWritable`` is false). A °C device reporting °F payloads is
         exactly GitHub issue #2.

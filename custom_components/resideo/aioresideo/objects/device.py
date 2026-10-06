@@ -10,6 +10,27 @@ from typing import Any
 
 from .base import ResideoBaseObject
 
+# Places whose local weather is reported in Fahrenheit: the US and its territories, plus the
+# handful of countries that still use it. See ``outdoor_temperature_unit``.
+FAHRENHEIT_COUNTRIES = frozenset(
+    {"US", "PR", "GU", "VI", "AS", "MP", "UM", "BS", "BZ", "KY", "LR", "PW", "FM", "MH"}
+)
+
+
+def outdoor_temperature_unit(country_code: str | None) -> str:
+    """``"F"`` or ``"C"``: the unit ``DisplayedOutdoorTemperature`` arrives in for an account.
+
+    Unlike every other temperature in the API (always °F, see
+    ``ResideoConfiguration.temperature_units``), the outdoor reading comes from Resideo's weather
+    service in the units local to the account's ``countryCode``. It follows neither the
+    thermostat's ``TemperatureUnits`` nor the account ``locale`` (GitHub issue #7: a Canadian
+    account with locale ``en_US`` and a °C thermostat gets °C outdoor; issue #2: a °C thermostat
+    on a US account got °F). An unknown country keeps the historical °F assumption.
+    """
+    if country_code is None:
+        return "F"
+    return "F" if country_code.strip().upper() in FAHRENHEIT_COUNTRIES else "C"
+
 
 class ResideoThermostat(ResideoBaseObject):
     """The thermostat device shadow + convenience accessors."""
@@ -95,6 +116,7 @@ class ResideoThermostat(ResideoBaseObject):
 
     @property
     def outdoor_temperature(self) -> float | None:
+        """In the account's local unit, not always °F — see ``outdoor_temperature_unit``."""
         return self._as_float(self.reported.get("DisplayedOutdoorTemperature"))
 
     @property

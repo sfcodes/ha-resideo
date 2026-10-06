@@ -10,6 +10,7 @@ from custom_components.resideo.aioresideo import (
     ResideoConfiguration,
     ResideoRooms,
     ResideoThermostat,
+    outdoor_temperature_unit,
 )
 from custom_components.resideo.aioresideo.objects.account import ResideoAccountDevice
 
@@ -156,3 +157,18 @@ def test_rooms_and_accessories(rooms: dict) -> None:
     assert acc.exclude_motion is False
     assert acc.software_revision == "2.1.5.0"
     assert acc.serial_number == "000000000000"
+
+
+def test_outdoor_temperature_unit_follows_country() -> None:
+    assert outdoor_temperature_unit("US") == "F"
+    assert outdoor_temperature_unit("us") == "F"
+    assert outdoor_temperature_unit("PR") == "F"
+    assert outdoor_temperature_unit("CA") == "C"
+    assert outdoor_temperature_unit("GB") == "C"
+    # No country in the account graph: keep the historical °F assumption.
+    assert outdoor_temperature_unit(None) == "F"
+
+
+def test_country_code(accounts: dict) -> None:
+    assert ResideoClient.country_code(accounts) == "US"
+    assert ResideoClient.country_code({"data": {}}) is None

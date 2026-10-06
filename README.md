@@ -284,7 +284,9 @@ already been refusing every request for well over a day. The phone app is the re
 - **The Resideo cloud speaks Fahrenheit**, whatever your thermostat or app displays. Home
   Assistant converts everything to your configured unit system, so Celsius households see
   °C throughout — but the handful of °F-native controls (like the freeze-protection floor)
-  step in whole °F.
+  step in whole °F. The one exception is outdoor temperature, which Resideo's weather service
+  sends in your account country's local unit; the integration reads that country and labels
+  it to match.
 - **Temporary hold** only exists while a schedule is enabled and followed; with the schedule
   off, setpoint changes are permanent holds — exactly like the app.
 - **Vacation hold** and **Hold until** show up when the device reports them, but can't be

@@ -62,7 +62,7 @@ async def test_setup_and_unload(hass: HomeAssistant, init_integration, mock_api)
 async def test_discovery_auth_failure_starts_reauth(
     hass: HomeAssistant, mock_config_entry, mock_api
 ) -> None:
-    mock_api.async_get_devices.side_effect = ResideoAuthError("token revoked")
+    mock_api.async_get_accounts.side_effect = ResideoAuthError("token revoked")
     mock_config_entry.add_to_hass(hass)
     from unittest.mock import patch
 
@@ -139,7 +139,7 @@ async def test_refused_cloud_retries_setup_and_raises_a_repair(
 ) -> None:
     """A 503 at discovery: retry (not a permanent failure), tell the user what Resideo said,
     and raise the repair card that explains how to tell an outage from a retired endpoint."""
-    mock_api.async_get_devices.side_effect = _refusing_cloud()
+    mock_api.async_get_accounts.side_effect = _refusing_cloud()
     mock_config_entry.add_to_hass(hass)
     from unittest.mock import patch
 
@@ -235,8 +235,8 @@ async def test_recovery_clears_the_repair(
     hass: HomeAssistant, mock_config_entry, mock_api
 ) -> None:
     """Once anything gets through, the card goes away on its own."""
-    serving_devices = mock_api.async_get_devices.side_effect  # conftest's fixture-backed lambda
-    mock_api.async_get_devices.side_effect = _refusing_cloud()
+    serving_accounts = mock_api.async_get_accounts.side_effect  # conftest's fixture-backed lambda
+    mock_api.async_get_accounts.side_effect = _refusing_cloud()
     mock_config_entry.add_to_hass(hass)
     from unittest.mock import patch
 
@@ -245,7 +245,7 @@ async def test_recovery_clears_the_repair(
         await hass.async_block_till_done()
         assert _issue(hass, mock_config_entry) is not None
 
-        mock_api.async_get_devices.side_effect = serving_devices
+        mock_api.async_get_accounts.side_effect = serving_accounts
         await hass.config_entries.async_reload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 

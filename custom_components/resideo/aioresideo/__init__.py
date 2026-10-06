@@ -42,6 +42,7 @@ from .objects import (
     ResideoRoom,
     ResideoRooms,
     ResideoThermostat,
+    outdoor_temperature_unit,
     parse_event,
 )
 from .stream import ConnectedCallback, ErrorCallback, EventCallback, ResideoStream
@@ -228,6 +229,7 @@ __all__ = [
     "apply_live_feed",
     "build_authorize_url",
     "decode_jwt_claims",
+    "outdoor_temperature_unit",
     "parse_authorize_redirect",
     "parse_event",
 ]
