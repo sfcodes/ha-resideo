@@ -22,6 +22,7 @@ from custom_components.resideo.aioresideo.exceptions import (
 from custom_components.resideo.config_flow import (
     _AUTH_ERROR_KEYS,
     FAILURE_MENUS,
+    MIGRATION_GUIDE_URL,
     ResideoConfigFlow,
 )
 from custom_components.resideo.const import (
@@ -49,9 +50,10 @@ def test_every_menu_has_a_handler_and_complete_strings() -> None:
         assert block, f"{menu} has no strings"
         assert block.get("title") and block.get("description")
         assert set(block["menu_options"]) == {"login", "browser", "manual"}
-        # Only `detail` is ever passed, and only by the failure menus.
+        # Only `detail` and `migration_url` are ever passed, and only by the failure menus.
         placeholders = set(re.findall(r"\{(\w+)\}", block["description"]))
-        assert placeholders <= ({"detail"} if menu in FAILURE_MENUS else set())
+        allowed = {"detail", "migration_url"} if menu in FAILURE_MENUS else set()
+        assert placeholders <= allowed
 
 
 def test_translations_match_strings() -> None:
@@ -208,6 +210,7 @@ async def test_failure_menu_survives_a_page_reload(hass: HomeAssistant) -> None:
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "invalid_auth"
     assert result["description_placeholders"]["detail"] == "credentials: invalid_credentials"
+    assert result["description_placeholders"]["migration_url"] == MIGRATION_GUIDE_URL
 
 
 async def test_login_form_remembers_the_email_on_retry(hass: HomeAssistant) -> None:

@@ -56,6 +56,11 @@ AUTH_MENU = ["login", "browser", "manual"]
 # When Resideo itself is refusing the direct login, lead with the path that still works.
 BLOCKED_MENU = ["browser", "manual", "login"]
 BLOCKED_KEYS = {"captcha_required", "too_many_attempts"}
+# Resideo's guide to moving from the old (Lyric) app to First Alert. A placeholder rather
+# than part of strings.json, because hassfest rejects URLs in translation strings.
+MIGRATION_GUIDE_URL = (
+    "https://www.resideo.com/us/en/support/if-i-switch-from-the-resideo-app-to-the-first-alert-app-what-will-happen-to-my-current-integrations/"
+)
 
 # Every failure that gets a menu of its own. Each needs an ``async_step_<key>`` handler and a
 # matching block in strings.json — see ``_auth_menu`` for why both are mandatory.
@@ -231,7 +236,10 @@ class ResideoConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_menu(
             step_id=key,
             menu_options=BLOCKED_MENU if key in BLOCKED_KEYS else AUTH_MENU,
-            description_placeholders={"detail": detail},
+            description_placeholders={
+                "detail": detail,
+                "migration_url": MIGRATION_GUIDE_URL,
+            },
         )
 
     # --- Failure menus: one handler per key in ``FAILURE_MENUS``, each existing so that a
