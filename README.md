@@ -27,6 +27,12 @@ on the thermostat or in the app, and Home Assistant sees it a second later.
 > **First Alert**. The app now called **Resideo** on your phone (it used to be **Honeywell
 > Home**) is the *older* one, on the system this integration can't use. When setup asks for a
 > login, it means your **First Alert** account.
+>
+> **First Alert is only offered in some countries.** As of October 2026 it's in the US, Canada,
+> Mexico, Central and South America (except Brazil), parts of the Caribbean, Saudi Arabia, the
+> UAE, Qatar, Kuwait, and India — but **not in Europe, the UK, Australia, or New Zealand**.
+> Thermostats there live in the older **Resideo** app, which this integration can't use. See
+> [Supported devices](#supported-devices).
 
 ## What you get
 
@@ -176,7 +182,7 @@ help wire it up, contributions are warmly welcome.
 
 ### If setup doesn't work
 
-There are two reasons it can fail, each with a clear symptom and fix.
+There are three reasons it can fail, each with a clear symptom.
 
 **1. The thermostat is an older Lyric one.** A few Honeywell thermostats — the **Lyric Round**
 and other older **Lyric**-branded units — run on a separate, older Resideo cloud that this
@@ -198,6 +204,18 @@ are rejected here. **Fix:** move it to the First Alert app by following Resideo'
 [Switching from the Resideo app to the First Alert app][switch-apps], then sign in here again.
 
 > **Symptom:** sign-in is **rejected**, even though the password is definitely right.
+
+**3. First Alert isn't available in your country.** Resideo only offers the First Alert app in
+the Americas, a few Gulf states, and India. Elsewhere — **all of Europe, the UK, Australia, and
+New Zealand** — Honeywell Home thermostats are set up in the **Resideo** app (formerly
+**Honeywell Home**), on the older system this integration can't reach. Moving the thermostat
+over, the fix for reason 2, isn't possible from these countries, because the First Alert app
+can't be installed there. There's no workaround on this integration's side; Home Assistant's
+built-in [Lyric](https://www.home-assistant.io/integrations/lyric/) integration is the
+remaining route.
+
+> **Symptom:** you can't find First Alert in your app store, and sign-in here is **rejected**
+> even though your **Resideo** app login works.
 
 [switch-apps]: https://www.resideo.com/us/en/support/if-i-switch-from-the-resideo-app-to-the-first-alert-app-what-will-happen-to-my-current-integrations/
 
@@ -242,7 +260,12 @@ people up is that your browser's Network panel has to be open **before** you sig
 Resideo's older login — the one behind the **Resideo** app (formerly **Honeywell Home**) — not
 the newer one the **First Alert** app and this integration use. Move your thermostat to First
 Alert by following [Resideo's instructions][switch-apps], then sign in here again. See
-[Supported devices](#supported-devices) for the two setup failures and their fixes.
+[Supported devices](#supported-devices) for the three setup failures and their fixes.
+
+**You can't find First Alert in your app store.** It isn't offered in your country — Resideo
+doesn't publish First Alert in Europe, the UK, Australia, or New Zealand. Thermostats there
+run on the older system this integration can't reach; see
+[Supported devices](#supported-devices).
 
 **Setup fails with "No supported thermostats in this Resideo account."** Your sign-in worked —
 the account just holds nothing this integration can drive. The message lists what it *did* find,
