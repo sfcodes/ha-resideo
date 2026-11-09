@@ -81,7 +81,7 @@ Vacation hold, Freeze protection, Away mode, and Commercial mode binary sensors.
 | Occupancy sensitivity | `select` | Takes effect at the sensor's next check-in (battery life comes first) |
 | Battery, Signal strength, Status | `sensor` | Diagnostic |
 
-<img align="right" width="300" src="https://raw.githubusercontent.com/sfcodes/ha-resideo/main/docs/images/device-page.png" alt="Resideo thermostat device page in Home Assistant">
+<img width="300" src="https://raw.githubusercontent.com/sfcodes/ha-resideo/main/docs/images/device-page.png" alt="Resideo thermostat device page in Home Assistant">
 
 ### Water shutoff valve (L5 / L7)
 
@@ -102,6 +102,8 @@ starts and then stays live over the same push stream as the thermostats.
 > Closing the valve **shuts off water to your house**. Automations that close it should be
 > deliberate, and there is no confirmation prompt in Home Assistant — treat `valve.close_valve`
 > like a real shutoff.
+
+<img width="300" src="https://raw.githubusercontent.com/sfcodes/ha-resideo/main/docs/images/valve.png" alt="Resideo valve device page in Home Assistant">
 
 ## Installation
 
