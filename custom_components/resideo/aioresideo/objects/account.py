@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 
+from ..const import SHUTOFF_VALVE_TYPE_PREFIX
 from .base import ResideoBaseObject
 
 
@@ -76,7 +77,16 @@ class ResideoAccountDevice(ResideoBaseObject):
         return decoded.split(":", 1)[0] or None
 
     @property
+    def is_shutoff_valve(self) -> bool:
+        """An L5 / L7 water shutoff valve (``globalDeviceType`` ``ShutoffValve_L7_T`` ...)."""
+        return (self.global_device_type or "").startswith(SHUTOFF_VALVE_TYPE_PREFIX)
+
+    @property
     def is_thermostat(self) -> bool:
+        # A valve's global id also decodes to ``LyricThermostatDevice`` (the backend uses one node
+        # type for every device), so it must be ruled out before the kind check below.
+        if self.is_shutoff_valve:
+            return False
         kind = (self.device_kind or "").lower()
         gdt = (self.global_device_type or "").lower()
         return "thermostat" in kind or "thermostat" in gdt or "lyric" in gdt

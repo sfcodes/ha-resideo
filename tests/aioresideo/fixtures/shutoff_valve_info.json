@@ -1,0 +1,68 @@
+{
+  "DeviceName": "Main",
+  "Faults": [
+    {
+      "Description": "Unknown error",
+      "Code": 821,
+      "Status": "Active",
+      "Actions": [],
+      "RisenTime": "2026-01-01T08:00:00.000+00:00"
+    },
+    {
+      "Description": "Old fault",
+      "Code": 100,
+      "Status": "Resolved",
+      "Actions": [],
+      "RisenTime": "2025-12-01T08:00:00.000+00:00"
+    }
+  ],
+  "ActuatorValve": {
+    "CommandSource": "app",
+    "RunningTime": 7000,
+    "ValveStatus": "Open",
+    "MotorCycles": 500,
+    "MotorCurrentAverage": 100,
+    "MotorCurrentMax": 480,
+    "DeviceTemperature": 77.0,
+    "LastAntiScaleTime": "2026-01-01T09:00:00.000+00:00",
+    "LeakStatus": "Ok"
+  },
+  "Online": true,
+  "LastCheckInTime": "2026-02-03T04:05:06.000+00:00",
+  "IsUpgrading": false,
+  "TargetUse": {
+    "TargetMaxUseEnable": false,
+    "TargetMaxUse": 15000.0,
+    "NotifyAt": 80.0,
+    "BillingPeriod": "Monthly",
+    "BillingStartDate": "2026-02-01T00:00:00.000+00:00",
+    "ConsumedThisPeriod": 2200.5,
+    "ThresholdReached": false
+  },
+  "MicroLeakTestSchedule": {
+    "Frequency": "OncePerWeek",
+    "WeekDay": "Wednesday",
+    "MonthDay": 1,
+    "HourMinute": "08:00",
+    "LastMicroLeakTest": "2026-02-01T08:05:09.000+00:00"
+  },
+  "WaterTotal": 135000.5,
+  "IsMicroLeakTestInProgress": false,
+  "IsBuzzerActive": false,
+  "IsBuzzerMuted": false,
+  "LiveData": true,
+  "LiveDataDuration": 5.0,
+  "FlowRate": 0.0,
+  "Temperature": 60.0,
+  "Pressure": 62.5,
+  "IsOnBatteryPower": false,
+  "BatteryCapacity": 99.0,
+  "TemperatureThresholds": { "Min": 41.0, "Max": 122.0 },
+  "PressureThresholds": { "Min": 20.0, "Max": 120.0 },
+  "OsNumber": "VWS03Y-3/4",
+  "DevModel": "VWS03Y-3/4",
+  "SupportedData": ["ActuatorValve", "HydronicModule"],
+  "SoftwareRevision": "0.1.4.12",
+  "HardwareRevision": "HUKA0000000-00-A",
+  "DeviceSerialNumber": "S0000000000001"
+}

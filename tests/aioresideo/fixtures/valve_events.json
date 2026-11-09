@@ -1,0 +1,55 @@
+{
+  "water_flow": {
+    "DeviceId": "0A1B2C3D4E5F",
+    "ChannelId": "ds-notification-service",
+    "NotificationType": "WaterFlow",
+    "DeviceType": "SmartMeterValve",
+    "TemplateId": "WaterFlow",
+    "Body": {
+      "Type": "WaterFlow",
+      "FlowRate": 13.5,
+      "WaterTotal": 135010.25,
+      "Temperature": 61.5,
+      "Pressure": 60.25
+    }
+  },
+  "valve_closing": {
+    "DeviceId": "0A1B2C3D4E5F",
+    "ChannelId": "ds-notification-service",
+    "NotificationType": "ActuatorValve",
+    "NotificationSubType": "ValveClosing",
+    "DeviceType": "SmartMeterValve",
+    "TemplateId": "ActuatorValve_ValveClosing",
+    "Body": { "CommandSource": "app", "ValveStatus": "closing" }
+  },
+  "valve_closed": {
+    "DeviceId": "0A1B2C3D4E5F",
+    "ChannelId": "ds-notification-service",
+    "NotificationType": "ActuatorValve",
+    "NotificationSubType": "ValveClosed",
+    "DeviceType": "SmartMeterValve",
+    "TemplateId": "ActuatorValve_ValveClosed",
+    "Body": { "CommandSource": "app", "ValveStatus": "close" }
+  },
+  "valve_open": {
+    "DeviceId": "0A1B2C3D4E5F",
+    "ChannelId": "ds-notification-service",
+    "NotificationType": "ActuatorValve",
+    "NotificationSubType": "ValveOpen",
+    "DeviceType": "SmartMeterValve",
+    "TemplateId": "ActuatorValve_ValveOpen",
+    "Body": { "CommandSource": "app", "ValveStatus": "open" }
+  },
+  "change_ok": {
+    "DeviceId": "0A1B2C3D4E5F",
+    "ChannelId": "ds-notification-service",
+    "NotificationType": "ChangeRequestSuccess",
+    "DeviceType": "SmartMeterValve",
+    "TemplateId": "ChangeRequestSuccess",
+    "Body": {
+      "DeviceSerialNo": "S0000000000001",
+      "ChangeName": "actuatorValve",
+      "ChangeDirection": "AppInitiated"
+    }
+  }
+}

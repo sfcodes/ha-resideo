@@ -32,6 +32,7 @@ from custom_components.resideo.aioresideo import (
     ResideoConfiguration,
     ResideoPriority,
     ResideoRooms,
+    ResideoShutoffValve,
     ResideoThermostat,
 )
 from custom_components.resideo.const import CONF_REFRESH_TOKEN, DOMAIN
@@ -39,6 +40,7 @@ from custom_components.resideo.const import CONF_REFRESH_TOKEN, DOMAIN
 FIXTURES = pathlib.Path(__file__).parent.parent / "aioresideo" / "fixtures"
 
 MAC = "AABBCCDDEEFF"
+VALVE_MAC = "0A1B2C3D4E5F"
 SUB = "auth0|user-1"
 
 WRITE_METHODS = (
@@ -54,6 +56,7 @@ WRITE_METHODS = (
     "async_set_freeze_protection",
     "async_set_setpoint_capabilities",
     "async_set_accessory_value",
+    "async_set_shutoff_valve",
 )
 
 
@@ -64,8 +67,11 @@ def load_fixture_json(name: str) -> dict:
 class FakeStream:
     """Stands in for ResideoStream; captures the coordinator's callbacks for injection."""
 
-    def __init__(self, node_id, device_ids, on_event, on_connected, on_error) -> None:
+    def __init__(
+        self, node_id, device_ids, on_event, on_connected, on_error, activate_ids=None
+    ) -> None:
         self.node_id = node_id
+        self.activate_ids = activate_ids  # None = the stream activates every device
         self.device_ids = device_ids
         self.on_event = on_event
         self.on_connected = on_connected
@@ -110,6 +116,17 @@ def configuration_data() -> dict:
 
 
 @pytest.fixture
+def valve_info() -> dict:
+    return load_fixture_json("shutoff_valve_info.json")
+
+
+@pytest.fixture
+def valve_infos(valve_info: dict) -> dict[str, Any]:
+    """Per-MAC shutoff-valve ``/info`` bodies; a test may map a MAC to an Exception."""
+    return {VALVE_MAC: valve_info}
+
+
+@pytest.fixture
 def shadows(device_shadow: dict) -> dict[str, Any]:
     """Per-MAC device shadows served by the mock; a test may map a MAC to an Exception."""
     return {MAC: device_shadow}
@@ -121,6 +138,7 @@ def mock_api(
     shadows: dict[str, Any],
     rooms_data: dict,
     configuration_data: dict,
+    valve_infos: dict[str, Any],
 ) -> AsyncMock:
     """A Resideo facade mock serving the sanitized fixtures.
 
@@ -145,6 +163,14 @@ def mock_api(
         return ResideoThermostat(deepcopy(shadow))
 
     api.async_get_device.side_effect = _get_device
+
+    def _get_shutoff_valve(mac: str) -> ResideoShutoffValve:
+        info = valve_infos[mac]
+        if isinstance(info, Exception):
+            raise info
+        return ResideoShutoffValve(deepcopy(info))
+
+    api.async_get_shutoff_valve.side_effect = _get_shutoff_valve
     api.async_get_rooms.side_effect = lambda mac: ResideoRooms(deepcopy(rooms_data))
     api.async_get_configuration.side_effect = lambda mac: ResideoConfiguration(
         deepcopy(configuration_data)
@@ -158,8 +184,10 @@ def mock_api(
 
     streams: list[FakeStream] = []
 
-    def _create_stream(node_id, device_ids, on_event, *, on_connected=None, on_error=None):
-        stream = FakeStream(node_id, device_ids, on_event, on_connected, on_error)
+    def _create_stream(
+        node_id, device_ids, on_event, *, on_connected=None, on_error=None, activate_ids=None
+    ):
+        stream = FakeStream(node_id, device_ids, on_event, on_connected, on_error, activate_ids)
         streams.append(stream)
         return stream
 

@@ -31,10 +31,14 @@ from .const import (
     OCP_APIM_SUBSCRIPTION_KEY,
     REQUEST_TIMEOUT,
     SETPOINT_PERMANENT_HOLD,
+    SHUTOFF_VALVE_V1,
     SIGNALR_NEGOTIATE_URL,
     THERMOSTAT_V1,
     THERMOSTAT_V2,
     TOKEN_REFRESH_MARGIN,
+    VALVE_COMMAND_CLOSE,
+    VALVE_COMMAND_OPEN,
+    VALVE_COMMAND_SOURCE,
 )
 from .exceptions import (
     ResideoApiError,
@@ -222,6 +226,14 @@ class ResideoClient:
     async def get_rooms(self, mac: str) -> dict[str, Any]:
         """Rooms + per-accessory sensor values (spec §3). v1 only — 404s under v2."""
         return await self.get(THERMOSTAT_V1.format(mac=mac) + "/group/0/rooms")
+
+    async def get_shutoff_valve_info(self, mac: str) -> dict[str, Any]:
+        """A water shutoff valve's full state (position, flow, pressure, battery, faults, ...).
+
+        One flat body, v1 only. This is also the only way to learn the valve's *current* position:
+        the push stream reports ``ActuatorValve`` only on a change.
+        """
+        return await self.get(SHUTOFF_VALVE_V1.format(mac=mac) + "/info")
 
     # -- real-time push (SignalR; see resideo-api-spec.md §9.2) ---------------
     async def async_signalr_negotiate(self) -> dict[str, str]:
@@ -451,6 +463,25 @@ class ResideoClient:
                 "excludeTemp": bool(exclude_temp),
             },
         )
+
+    async def set_shutoff_valve(self, mac: str, open_valve: bool) -> dict[str, Any]:
+        """Open or close a water shutoff valve. ✅ verified live (open and close).
+
+        Returns ``{"TransactionId": ...}`` (``202``); the valve takes ~10 s to move and reports
+        ``closing``/``closed`` (or ``opening``/``open``) over the stream.
+
+        ``CommandSource`` is mandatory (400 ``ParameterIsMissing`` without it). Always send an
+        explicit ``ValveStatus``; as with the thermostat commands, never probe with a partial body.
+        """
+        payload = {
+            "CommandSource": VALVE_COMMAND_SOURCE,
+            "ValveStatus": VALVE_COMMAND_OPEN if open_valve else VALVE_COMMAND_CLOSE,
+            "ChannelId": DEFAULT_CHANNEL_ID,
+        }
+        _LOGGER.debug("valve command mac=%s body=%s", mac, payload)
+        result = await self.put(SHUTOFF_VALVE_V1.format(mac=mac) + "/valve", json=payload)
+        _LOGGER.debug("valve command accepted -> %s", result)
+        return result
 
     # -- helpers --------------------------------------------------------------
     @staticmethod

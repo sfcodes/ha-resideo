@@ -42,14 +42,23 @@
       "temperature_units": { "default": "mdi:temperature-fahrenheit" },
       "matter_status": { "default": "mdi:home-automation" },
       "priority_status": { "default": "mdi:home-thermometer" },
-      "occupancy_timeout": { "default": "mdi:timer-outline" }
+      "occupancy_timeout": { "default": "mdi:timer-outline" },
+      "water_total": { "default": "mdi:water" },
+      "water_usage_period": { "default": "mdi:water-sync" },
+      "water_temperature": { "default": "mdi:thermometer-water" },
+      "water_pressure": { "default": "mdi:gauge" },
+      "leak_status": { "default": "mdi:pipe-leak" },
+      "last_check_in": { "default": "mdi:clock-check-outline" }
     },
     "binary_sensor": {
       "vacation_hold": { "default": "mdi:airplane" },
       "freeze_protection": { "default": "mdi:snowflake-alert" },
       "freeze_protection_configured": { "default": "mdi:snowflake-check" },
       "away_mode": { "default": "mdi:home-export-outline" },
-      "commercial": { "default": "mdi:office-building" }
+      "commercial": { "default": "mdi:office-building" },
+      "on_battery_power": { "default": "mdi:battery-alert" },
+      "micro_leak_test_running": { "default": "mdi:pipe-leak" },
+      "buzzer": { "default": "mdi:volume-high" }
     },
     "switch": {
       "feels_like": { "default": "mdi:thermometer-lines" },

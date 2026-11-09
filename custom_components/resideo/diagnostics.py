@@ -23,6 +23,16 @@ TO_REDACT = {
     "SerialNumber",
 }
 
+# A valve's ``/info`` identifiers, on top of the above: ids, the serial, and the ``LocationId``/
+# ``TransactionId`` cross-references.
+VALVE_TO_REDACT = TO_REDACT | {
+    "DeviceSerialNumber",
+    "DeviceSerialNo",
+    "LocationId",
+    "TransactionId",
+    "SourceDeviceId",
+}
+
 # The account graph (/accounts) on top of the above: who the user is and where they live.
 # ``name`` covers location names, which are often a street address. ``id`` covers the
 # user/account/location/device node ids, and the two cross-references below carry the same
@@ -71,5 +81,9 @@ async def async_get_config_entry_diagnostics(
                 "priority": async_redact_data(data.priority.attributes, TO_REDACT),
             }
             for data in coordinator.data.values()
+        ],
+        "valves": [
+            async_redact_data(valve.attributes, VALVE_TO_REDACT)
+            for valve in coordinator.valves.values()
         ],
     }

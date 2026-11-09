@@ -5,7 +5,7 @@
 [![CI](https://github.com/sfcodes/ha-resideo/actions/workflows/ci.yml/badge.svg)](https://github.com/sfcodes/ha-resideo/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/sfcodes/ha-resideo)](LICENSE)
 
-Control your **Resideo** thermostats from Home Assistant. Sign in with the **same email and
+Control your **Resideo** thermostats and **L5 / L7 water shutoff valves** from Home Assistant. Sign in with the **same email and
 password** you use in the **First Alert** app — Resideo's current app for these thermostats —
 and that's the whole setup. From then on everything stays in sync in real time: change something
 on the thermostat or in the app, and Home Assistant sees it a second later.
@@ -81,7 +81,29 @@ Vacation hold, Freeze protection, Away mode, and Commercial mode binary sensors.
 | Occupancy sensitivity | `select` | Takes effect at the sensor's next check-in (battery life comes first) |
 | Battery, Signal strength, Status | `sensor` | Diagnostic |
 
-<img align="right" width="300" src="https://raw.githubusercontent.com/sfcodes/ha-resideo/main/docs/images/device-page.png" alt="Resideo thermostat device page in Home Assistant">
+<img width="300" src="https://raw.githubusercontent.com/sfcodes/ha-resideo/main/docs/images/device-page.png" alt="Resideo thermostat device page in Home Assistant">
+
+### Water shutoff valve (L5 / L7)
+
+A **Resideo L7 Smart Water Flow Monitor & Shutoff Valve** (and, untested, the L5) in your
+**First Alert** account becomes a device too. Its position is read when the integration
+starts and then stays live over the same push stream as the thermostats.
+
+| Entity | Type | Notes |
+| --- | --- | --- |
+| Valve | `valve` | Open / close. Shows _opening_ / _closing_ for the ~10 s the motor runs |
+| Flow rate | `sensor` | Updates about every 10 s; more often while water is running |
+| Water total, Water used this period | `sensor` | Litres on the device; shown in gallons for US-unit setups. Total works with the Energy dashboard's water source |
+| Water temperature, Water pressure | `sensor` | |
+| Battery, Leak status, Last check-in, Faults | `sensor` | Diagnostic |
+| Online, Fault, On battery power, Micro-leak test running, Buzzer | `binary_sensor` | Diagnostic |
+
+> [!CAUTION]
+> Closing the valve **shuts off water to your house**. Automations that close it should be
+> deliberate, and there is no confirmation prompt in Home Assistant — treat `valve.close_valve`
+> like a real shutoff.
+
+<img width="300" src="https://raw.githubusercontent.com/sfcodes/ha-resideo/main/docs/images/valve.png" alt="Resideo valve device page in Home Assistant">
 
 ## Installation
 
@@ -176,6 +198,11 @@ includes:
 | **ElitePRO S1200 Smart**, **X8S Smart** — with wireless room sensors | ✅ Built and tested against these |
 | **T9 / T10 Smart** and newer models | ☑️ Expected to work — let me know if you try one out |
 | **T5**, **T5+**, **T6**, **T6R Smart** | ☑️ Work when set up in the **First Alert** app (confirmed by a user running a T5) |
+
+| Water shutoff valve | Status |
+| --- | --- |
+| **L7 Smart Water Flow Monitor & Shutoff Valve** (`VWS03Y`) | ✅ Read and open/close verified against a real valve |
+| **L5 WiFi Water Leak Shutoff Valve** | ☑️ Same family and API; expected to work, untested |
 
 Smoke detectors and other Resideo products aren't supported yet — if you own one and want to
 help wire it up, contributions are warmly welcome.
@@ -312,6 +339,11 @@ already been refusing every request for well over a day. The phone app is the re
   it to match.
 - **Temporary hold** only exists while a schedule is enabled and followed; with the schedule
   off, setpoint changes are permanent holds — exactly like the app.
+- **Valve position after a restart** comes from a read at startup. The cloud only _pushes_
+  position changes, so if the valve is moved while Home Assistant can't reach the cloud, it
+  catches up on reconnect rather than instantly.
+- **Valve leak detection** is limited to what the valve itself reports (`Leak status`, faults).
+  The leak sensors that pair with an L5/L7 aren't separate devices here yet.
 - **Vacation hold** and **Hold until** show up when the device reports them, but can't be
   started from Home Assistant yet.
 

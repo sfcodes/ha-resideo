@@ -95,9 +95,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ResideoConfigEntry) -> 
 async def async_remove_config_entry_device(
     hass: HomeAssistant, entry: ResideoConfigEntry, device_entry: dr.DeviceEntry
 ) -> bool:
-    """Allow deleting devices (thermostats / room sensors) the account no longer reports."""
+    """Allow deleting devices (thermostats / room sensors / valves) the account no longer reports."""
     coordinator = entry.runtime_data
-    current: set[str] = set()
+    current: set[str] = set(coordinator.valves)
     for mac, data in coordinator.data.items():
         current.add(mac)
         for room, accessory in data.rooms.air_sensor_accessories():
