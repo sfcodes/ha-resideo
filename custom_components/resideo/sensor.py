@@ -24,21 +24,24 @@ from homeassistant.const import (
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
+    UnitOfPressure,
     UnitOfTemperature,
     UnitOfTime,
+    UnitOfVolume,
+    UnitOfVolumeFlowRate,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
-from .aioresideo import ResideoAccessory, outdoor_temperature_unit
+from .aioresideo import ResideoAccessory, ResideoShutoffValve, outdoor_temperature_unit
 from .coordinator import (
     ResideoConfigEntry,
     ResideoDataUpdateCoordinator,
     ResideoDeviceData,
 )
-from .entity import ResideoAccessoryEntity, ResideoEntity
+from .entity import ResideoAccessoryEntity, ResideoEntity, ResideoValveEntity
 
 # Reads are pure push off the coordinator — no per-entity update work to limit.
 PARALLEL_UPDATES = 0
@@ -368,14 +371,90 @@ ACCESSORY_SENSORS: tuple[ResideoAccessorySensorEntityDescription, ...] = (
 )
 
 
+# --- water shutoff valve sensors ----------------------------------------------
+# Units are fixed by the device (litres, L/min, °F, psi) and match what the app shows; Home
+# Assistant converts for display according to the user's unit system.
+@dataclass(frozen=True, kw_only=True)
+class ResideoValveSensorEntityDescription(SensorEntityDescription):
+    """Shutoff-valve sensor description with a getter over the valve's ``/info`` snapshot."""
+
+    value_fn: Callable[[ResideoShutoffValve], StateType]
+    exists_fn: Callable[[ResideoShutoffValve], bool] = lambda _valve: True
+
+
+VALVE_SENSORS: tuple[ResideoValveSensorEntityDescription, ...] = (
+    ResideoValveSensorEntityDescription(
+        key="flow_rate",
+        device_class=SensorDeviceClass.VOLUME_FLOW_RATE,
+        native_unit_of_measurement=UnitOfVolumeFlowRate.LITERS_PER_MINUTE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda v: v.flow_rate,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="water_total", translation_key="water_total",
+        device_class=SensorDeviceClass.WATER,
+        native_unit_of_measurement=UnitOfVolume.LITERS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=lambda v: v.water_total,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="water_usage_period", translation_key="water_usage_period",
+        device_class=SensorDeviceClass.WATER,
+        native_unit_of_measurement=UnitOfVolume.LITERS,
+        # Resets at the start of each billing period.
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=lambda v: v.consumed_this_period,
+        exists_fn=lambda v: v.consumed_this_period is not None,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="water_temperature", translation_key="water_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda v: v.temperature,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="water_pressure", translation_key="water_pressure",
+        device_class=SensorDeviceClass.PRESSURE,
+        native_unit_of_measurement=UnitOfPressure.PSI,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda v: v.pressure,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="battery", device_class=SensorDeviceClass.BATTERY, entity_category=DIAG,
+        native_unit_of_measurement=PERCENTAGE, state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda v: v.battery, exists_fn=lambda v: v.battery is not None,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="leak_status", translation_key="leak_status", entity_category=DIAG,
+        value_fn=lambda v: v.leak_status, exists_fn=lambda v: v.leak_status is not None,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="last_check_in", translation_key="last_check_in", entity_category=DIAG,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda v: v.last_check_in, exists_fn=lambda v: v.last_check_in is not None,
+    ),
+    ResideoValveSensorEntityDescription(
+        key="fault_count", translation_key="fault_count", entity_category=DIAG,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda v: len(v.active_faults),
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ResideoConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up Resideo sensor entities (device sensors + remote-accessory sub-devices)."""
+    """Set up Resideo sensor entities (thermostat + remote-accessory + shutoff-valve sensors)."""
     coordinator = entry.runtime_data
-    entities: list[SensorEntity] = []
+    entities: list[SensorEntity] = [
+        ResideoValveSensor(coordinator, mac, desc)
+        for mac, valve in coordinator.valves.items()
+        for desc in VALVE_SENSORS
+        if desc.exists_fn(valve)
+    ]
     for mac, data in coordinator.data.items():
         entities.extend(
             ResideoSensor(coordinator, mac, desc)
@@ -412,6 +491,27 @@ class ResideoSensor(ResideoEntity, SensorEntity):
     def native_value(self) -> StateType:
         data = self._device_data
         return self.entity_description.value_fn(data) if data else None
+
+
+class ResideoValveSensor(ResideoValveEntity, SensorEntity):
+    """A sensor reading a value off a shutoff valve's ``/info`` snapshot."""
+
+    entity_description: ResideoValveSensorEntityDescription
+
+    def __init__(
+        self,
+        coordinator: ResideoDataUpdateCoordinator,
+        mac: str,
+        description: ResideoValveSensorEntityDescription,
+    ) -> None:
+        super().__init__(coordinator, mac)
+        self.entity_description = description
+        self._attr_unique_id = f"{mac}_{description.key}"
+
+    @property
+    def native_value(self) -> StateType:
+        valve = self.valve
+        return self.entity_description.value_fn(valve) if valve else None
 
 
 class ResideoAccessorySensor(ResideoAccessoryEntity, SensorEntity):

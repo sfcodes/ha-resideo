@@ -18,13 +18,13 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .aioresideo import ResideoAccessory
+from .aioresideo import ResideoAccessory, ResideoShutoffValve
 from .coordinator import (
     ResideoConfigEntry,
     ResideoDataUpdateCoordinator,
     ResideoDeviceData,
 )
-from .entity import ResideoAccessoryEntity, ResideoEntity
+from .entity import ResideoAccessoryEntity, ResideoEntity, ResideoValveEntity
 
 # Reads are pure push off the coordinator — no per-entity update work to limit.
 PARALLEL_UPDATES = 0
@@ -138,6 +138,42 @@ ACCESSORY_BINARY_SENSORS: tuple[ResideoAccessoryBinarySensorEntityDescription, .
 )
 
 
+# --- water shutoff valve binary sensors ---------------------------------------
+@dataclass(frozen=True, kw_only=True)
+class ResideoValveBinarySensorEntityDescription(BinarySensorEntityDescription):
+    value_fn: Callable[[ResideoShutoffValve], bool | None]
+    exists_fn: Callable[[ResideoShutoffValve], bool] = lambda _valve: True
+    # False keeps the entity available while the valve is offline (connectivity sensor).
+    requires_online: bool = True
+
+
+VALVE_BINARY_SENSORS: tuple[ResideoValveBinarySensorEntityDescription, ...] = (
+    ResideoValveBinarySensorEntityDescription(
+        key="online", device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=DIAG, value_fn=lambda v: v.online, requires_online=False,
+    ),
+    ResideoValveBinarySensorEntityDescription(
+        key="fault", translation_key="fault",
+        device_class=BinarySensorDeviceClass.PROBLEM, entity_category=DIAG,
+        value_fn=lambda v: v.has_fault,
+    ),
+    ResideoValveBinarySensorEntityDescription(
+        key="on_battery_power", translation_key="on_battery_power", entity_category=DIAG,
+        value_fn=lambda v: v.on_battery_power, exists_fn=lambda v: v.on_battery_power is not None,
+    ),
+    ResideoValveBinarySensorEntityDescription(
+        key="micro_leak_test_running", translation_key="micro_leak_test_running",
+        device_class=BinarySensorDeviceClass.RUNNING, entity_category=DIAG,
+        value_fn=lambda v: v.micro_leak_test_in_progress,
+        exists_fn=lambda v: v.micro_leak_test_in_progress is not None,
+    ),
+    ResideoValveBinarySensorEntityDescription(
+        key="buzzer", translation_key="buzzer", entity_category=DIAG,
+        value_fn=lambda v: v.buzzer_active, exists_fn=lambda v: v.buzzer_active is not None,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ResideoConfigEntry,
@@ -145,7 +181,12 @@ async def async_setup_entry(
 ) -> None:
     """Set up Resideo binary sensors."""
     coordinator = entry.runtime_data
-    entities: list[BinarySensorEntity] = []
+    entities: list[BinarySensorEntity] = [
+        ResideoValveBinarySensor(coordinator, mac, desc)
+        for mac, valve in coordinator.valves.items()
+        for desc in VALVE_BINARY_SENSORS
+        if desc.exists_fn(valve)
+    ]
     for mac, data in coordinator.data.items():
         entities.extend(
             ResideoBinarySensor(coordinator, mac, desc)
@@ -181,6 +222,28 @@ class ResideoBinarySensor(ResideoEntity, BinarySensorEntity):
     def is_on(self) -> bool | None:
         data = self._device_data
         return self.entity_description.value_fn(data) if data else None
+
+
+class ResideoValveBinarySensor(ResideoValveEntity, BinarySensorEntity):
+    """A binary sensor off a shutoff valve's ``/info`` snapshot."""
+
+    entity_description: ResideoValveBinarySensorEntityDescription
+
+    def __init__(
+        self,
+        coordinator: ResideoDataUpdateCoordinator,
+        mac: str,
+        description: ResideoValveBinarySensorEntityDescription,
+    ) -> None:
+        super().__init__(coordinator, mac)
+        self.entity_description = description
+        self._attr_unique_id = f"{mac}_{description.key}"
+        self._requires_device_online = description.requires_online
+
+    @property
+    def is_on(self) -> bool | None:
+        valve = self.valve
+        return self.entity_description.value_fn(valve) if valve else None
 
 
 class ResideoAccessoryBinarySensor(ResideoAccessoryEntity, BinarySensorEntity):

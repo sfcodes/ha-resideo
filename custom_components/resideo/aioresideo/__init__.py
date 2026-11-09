@@ -28,7 +28,7 @@ from .exceptions import (
     ResideoError,
     ResideoUnavailableError,
 )
-from .merge import LIVE_FEED_MERGED_PROPERTIES, apply_live_feed
+from .merge import LIVE_FEED_MERGED_PROPERTIES, apply_live_feed, apply_valve_event
 from .objects import (
     ResideoAccessory,
     ResideoAccountDevice,
@@ -41,7 +41,11 @@ from .objects import (
     ResideoPriority,
     ResideoRoom,
     ResideoRooms,
+    ResideoShutoffValve,
     ResideoThermostat,
+    ResideoValveStatus,
+    ResideoWaterFlow,
+    normalize_valve_state,
     outdoor_temperature_unit,
     parse_event,
 )
@@ -92,7 +96,15 @@ class Resideo:
         """Only the thermostats from the account graph."""
         return [d for d in await self.async_get_devices() if d.is_thermostat]
 
+    async def async_get_shutoff_valves(self) -> list[ResideoAccountDevice]:
+        """Only the water shutoff valves from the account graph."""
+        return [d for d in await self.async_get_devices() if d.is_shutoff_valve]
+
     # -- reads ----------------------------------------------------------------
+    async def async_get_shutoff_valve(self, mac: str) -> ResideoShutoffValve:
+        """A shutoff valve's full state (``/info``)."""
+        return ResideoShutoffValve(await self.client.get_shutoff_valve_info(mac))
+
     async def async_get_device(self, mac: str) -> ResideoThermostat:
         return ResideoThermostat(await self.client.get_device(mac))
 
@@ -120,6 +132,7 @@ class Resideo:
         *,
         on_connected: ConnectedCallback | None = None,
         on_error: ErrorCallback | None = None,
+        activate_ids: list[str] | None = None,
     ) -> ResideoStream:
         """Build a :class:`ResideoStream` for one location (caller drives ``async_run``/``async_stop``)."""
         return ResideoStream(
@@ -129,9 +142,13 @@ class Resideo:
             on_event,
             on_connected=on_connected,
             on_error=on_error,
+            activate_ids=activate_ids,
         )
 
     # -- writes (passthrough to the client; see spec §4) ----------------------
+    async def async_set_shutoff_valve(self, mac: str, open_valve: bool) -> dict[str, Any]:
+        return await self.client.set_shutoff_valve(mac, open_valve)
+
     async def async_set_cool_setpoint(self, mac: str, value: float, **kw: Any) -> dict[str, Any]:
         return await self.client.set_cool_setpoint(mac, value, **kw)
 
@@ -221,14 +238,19 @@ __all__ = [
     "ResideoPriority",
     "ResideoRoom",
     "ResideoRooms",
+    "ResideoShutoffValve",
     "ResideoStream",
     "ResideoThermostat",
     "ResideoUnavailableError",
+    "ResideoValveStatus",
+    "ResideoWaterFlow",
     "TokenUpdatedCallback",
     "__version__",
     "apply_live_feed",
+    "apply_valve_event",
     "build_authorize_url",
     "decode_jwt_claims",
+    "normalize_valve_state",
     "outdoor_temperature_unit",
     "parse_authorize_redirect",
     "parse_event",

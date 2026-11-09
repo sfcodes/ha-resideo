@@ -22,7 +22,8 @@ from functools import partial
 from itertools import pairwise
 from typing import Any
 
-from .objects.events import ResideoLiveFeed
+from .objects.events import ResideoLiveFeed, ResideoValveStatus, ResideoWaterFlow
+from .objects.valve import ResideoShutoffValve, normalize_valve_state
 
 
 def apply_live_feed(
@@ -246,3 +247,33 @@ _DISPATCH = {
 #: LiveFeed property names merged in-memory by :func:`apply_live_feed`. The coordinator resyncs
 #: (re-reads REST) for any LiveFeed whose ``PropertyName`` is **not** in this set.
 LIVE_FEED_MERGED_PROPERTIES = frozenset(_DISPATCH)
+
+
+def apply_valve_event(
+    valve: ResideoShutoffValve, event: ResideoWaterFlow | ResideoValveStatus
+) -> ResideoShutoffValve:
+    """Apply one shutoff-valve push to a valve's ``/info`` snapshot (input untouched).
+
+    ``WaterFlow`` overwrites the four live readings it carries (a ``None`` field is left alone —
+    no-clobber). ``ActuatorValve`` sets the position, but only when it is one we recognise, so an
+    unfamiliar status string can't blank the entity.
+    """
+    attrs = deepcopy(valve.attributes)
+    if isinstance(event, ResideoWaterFlow):
+        for key, value in (
+            ("FlowRate", event.flow_rate),
+            ("WaterTotal", event.water_total),
+            ("Temperature", event.temperature),
+            ("Pressure", event.pressure),
+        ):
+            if value is not None:
+                attrs[key] = value
+    elif isinstance(event, ResideoValveStatus):
+        if normalize_valve_state(event.status) is not None:
+            actuator = attrs.get("ActuatorValve")
+            actuator = dict(actuator) if isinstance(actuator, dict) else {}
+            actuator["ValveStatus"] = event.status
+            if event.command_source:
+                actuator["CommandSource"] = event.command_source
+            attrs["ActuatorValve"] = actuator
+    return ResideoShutoffValve(attrs)

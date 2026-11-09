@@ -59,10 +59,14 @@ class ResideoStream:
         *,
         on_connected: ConnectedCallback | None = None,
         on_error: ErrorCallback | None = None,
+        activate_ids: list[str] | None = None,
     ) -> None:
         self._client = client
         self._location_node_id = location_node_id
         self._device_ids = list(device_ids)
+        # Only thermostats need the ``/priority`` read to start their values feed; a shutoff
+        # valve pushes on its own. ``None`` keeps the original "activate everything".
+        self._activate_ids = list(device_ids) if activate_ids is None else list(activate_ids)
         self._on_event = on_event
         self._on_connected = on_connected
         self._on_error = on_error
@@ -162,7 +166,7 @@ class ResideoStream:
 
     async def _activate_feed(self) -> None:
         """Read ``/priority`` per device — the trigger that starts the values feed (spec §9.2)."""
-        for mac in self._device_ids:
+        for mac in self._activate_ids:
             try:
                 await self._client.get_priority(mac)
             except ResideoError as err:

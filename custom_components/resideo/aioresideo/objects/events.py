@@ -6,6 +6,9 @@ Two families behave very differently:
                               ``Body.Value`` / ``Body.SubscriptionExpiration``).
   - ``ChangeRequestSuccess`` / ``ChangeRequestFailure`` — command-dispatch confirmations
                               (``Body.TransactionId`` matches a REST write's ``202``); no values.
+  - ``WaterFlow`` / ``ActuatorValve`` — **shutoff valve** notifications. Unlike thermostat
+                              LiveFeed they are flat: ``Body`` carries the values directly (flow,
+                              total, temperature, pressure / valve position).
 
 :func:`parse_event` turns a raw frame argument (a JSON string or already-decoded dict) into a
 typed event, or ``None`` for input we don't model.
@@ -39,7 +42,35 @@ class ResideoChangeConfirm:
     success: bool
 
 
-ResideoEvent = ResideoLiveFeed | ResideoChangeConfirm
+@dataclass(frozen=True)
+class ResideoWaterFlow:
+    """A shutoff valve ``WaterFlow`` reading (about every 10 s). Litres, L/min, °F, psi."""
+
+    device_id: str | None
+    flow_rate: float | None
+    water_total: float | None
+    temperature: float | None
+    pressure: float | None
+
+
+@dataclass(frozen=True)
+class ResideoValveStatus:
+    """A shutoff valve ``ActuatorValve`` position change.
+
+    ``status`` is the raw ``Body.ValveStatus`` (``opening`` / ``open`` / ``closing`` / ``close``);
+    ``command_source`` is who moved it (``app``, ...).
+    """
+
+    device_id: str | None
+    status: str | None
+    command_source: str | None = None
+
+
+ResideoEvent = ResideoLiveFeed | ResideoChangeConfirm | ResideoWaterFlow | ResideoValveStatus
+
+
+def _num(value: Any) -> float | None:
+    return float(value) if isinstance(value, int | float) and not isinstance(value, bool) else None
 
 
 def parse_event(arg: str | dict[str, Any]) -> ResideoEvent | None:
@@ -64,6 +95,20 @@ def parse_event(arg: str | dict[str, Any]) -> ResideoEvent | None:
             property_name=body.get("PropertyName"),
             value=body.get("Value"),
             subscription_expiration=body.get("SubscriptionExpiration"),
+        )
+    if notif_type == "WaterFlow":
+        return ResideoWaterFlow(
+            device_id=device_id,
+            flow_rate=_num(body.get("FlowRate")),
+            water_total=_num(body.get("WaterTotal")),
+            temperature=_num(body.get("Temperature")),
+            pressure=_num(body.get("Pressure")),
+        )
+    if notif_type == "ActuatorValve":
+        return ResideoValveStatus(
+            device_id=device_id,
+            status=body.get("ValveStatus"),
+            command_source=body.get("CommandSource"),
         )
     if notif_type in ("ChangeRequestSuccess", "ChangeRequestFailure"):
         return ResideoChangeConfirm(

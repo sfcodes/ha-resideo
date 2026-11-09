@@ -35,10 +35,15 @@ from .aioresideo import (
     ResideoLocation,
     ResideoPriority,
     ResideoRooms,
+    ResideoShutoffValve,
     ResideoStream,
     ResideoThermostat,
+    ResideoValveStatus,
+    ResideoWaterFlow,
     apply_live_feed,
+    apply_valve_event,
 )
+from .aioresideo.const import VALVE_STATE_CLOSING, VALVE_STATE_OPENING
 from .aioresideo.exceptions import (
     ResideoApiError,
     ResideoAuthError,
@@ -96,6 +101,10 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         )
         self.api = api
         self._macs: list[str] = []
+        # Water shutoff valves live beside the thermostats, not inside ``data``: they share the
+        # account, the SignalR stream and the resync, but none of the thermostat shadow shapes.
+        self._valve_macs: list[str] = []
+        self.valves: dict[str, ResideoShutoffValve] = {}
         self._targets: list[ResideoLocation] = []
         # The account's country, read once at setup. It decides the unit of the outdoor
         # temperature, the one reading that isn't always °F (see ``outdoor_temperature_unit``).
@@ -137,7 +146,8 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         self._targets = ResideoClient.iter_locations(accounts)
         self.country_code = ResideoClient.country_code(accounts)
         self._macs = [d.mac for d in devices if d.is_thermostat and d.mac]
-        if not self._macs:
+        self._valve_macs = [d.mac for d in devices if d.is_shutoff_valve and d.mac]
+        if not self._macs and not self._valve_macs:
             # A stable account-level condition (e.g. only Lyric/LCC-platform devices, which
             # live on a system this API can't reach) -> fail setup rather than retry.
             if devices:
@@ -158,9 +168,12 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
                 "for those."
             )
         _LOGGER.debug(
-            "Discovered %d thermostat(s) %s across %d location(s), account country %s",
+            "Discovered %d thermostat(s) %s and %d shutoff valve(s) %s across %d location(s), "
+            "account country %s",
             len(self._macs),
             self._macs,
+            len(self._valve_macs),
+            self._valve_macs,
             len(self._targets),
             self.country_code,
         )
@@ -192,18 +205,31 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
                 previous = (self.data or {}).get(mac)
                 if previous is not None:
                     result[mac] = previous
+        valves: dict[str, ResideoShutoffValve] = {}
+        for mac in self._valve_macs:
+            try:
+                valves[mac] = await self.api.async_get_shutoff_valve(mac)
+            except ResideoAuthError as err:
+                raise ConfigEntryAuthFailed(str(err)) from err
+            except (ResideoConnectionError, ResideoError) as err:
+                if isinstance(err, ResideoUnavailableError):
+                    unavailable = err
+                failures.append(f"{mac}: {err}")
+                if (previous_valve := self.valves.get(mac)) is not None:
+                    valves[mac] = previous_valve
         if failures:
-            if len(failures) == len(self._macs):
+            if len(failures) == len(self._macs) + len(self._valve_macs):
                 if unavailable is not None:
                     async_report_unavailable(self.hass, self.config_entry, unavailable)
                     raise UpdateFailed(unavailable_reason(unavailable))
                 raise UpdateFailed("; ".join(failures))
             _LOGGER.warning(
-                "Resync failed for %d of %d thermostat(s): %s",
+                "Resync failed for %d of %d device(s): %s",
                 len(failures),
-                len(self._macs),
+                len(self._macs) + len(self._valve_macs),
                 "; ".join(failures),
             )
+        self.valves = valves
         # Something got through, so the cloud is answering us again.
         async_clear_unavailable(self.hass, self.config_entry)
         return result
@@ -344,11 +370,16 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         failure raises ``ConfigEntryNotReady`` / ``ConfigEntryAuthFailed`` so setup is retried —
         push is the contract, so we never proceed without it.
         """
-        known = set(self._macs)
+        thermostats = set(self._macs)
+        known = thermostats | set(self._valve_macs)
         for target in self._targets:
             device_ids = [m for m in target.device_ids if m in known]
             if not device_ids or not target.node_id:
                 continue
+            kwargs: dict[str, Any] = {}
+            if any(m not in thermostats for m in device_ids):
+                # A valve needs no ``/priority`` activation read — thermostats only.
+                kwargs["activate_ids"] = [m for m in device_ids if m in thermostats]
             self._streams.append(
                 self.api.create_stream(
                     target.node_id,
@@ -356,12 +387,13 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
                     self._on_stream_event,
                     on_connected=self._on_stream_connected,
                     on_error=self._on_stream_error,
+                    **kwargs,
                 )
             )
         if not self._streams:
             raise ConfigEntryNotReady(
-                f"Found {len(self._macs)} thermostat(s), but no account location "
-                "supports live updates (SignalR)"
+                f"Found {len(self._macs)} thermostat(s) and {len(self._valve_macs)} valve(s), "
+                "but no account location supports live updates (SignalR)"
             )
 
         try:
@@ -389,7 +421,24 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
     @callback
     def _on_stream_event(self, event: ResideoLiveFeed | ResideoChangeConfirm) -> None:
         """Apply one SignalR event to the cached data (called on the loop from the recv loop)."""
+        if isinstance(event, ResideoWaterFlow | ResideoValveStatus):
+            self._apply_valve_event(event)
+            return
         if isinstance(event, ResideoChangeConfirm):
+            if event.device_id in self.valves:
+                # A valve's new position arrives as an ``ActuatorValve`` event. Re-reading REST
+                # here would race it (``/info`` can still say the old position) and clobber it.
+                if event.success:
+                    _LOGGER.debug("Valve ChangeRequest %s ok txn=%s", event.change_name, event.transaction_id)
+                else:
+                    _LOGGER.warning(
+                        "Resideo rejected valve change %s (txn=%s) for %s",
+                        event.change_name,
+                        event.transaction_id,
+                        event.device_id,
+                    )
+                    self.schedule_resync()  # roll the optimistic opening/closing back
+                return
             if not event.success:
                 # The cloud accepted (202) but the device/service rejected the change — the
                 # optimistic UI value will be rolled back by the reconcile refresh.
@@ -431,6 +480,34 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         )
         # Pushes the new data AND clears any prior error state -> entities available again.
         self.async_set_updated_data({**self.data, event.device_id: updated})
+
+    @callback
+    def _apply_valve_event(self, event: ResideoWaterFlow | ResideoValveStatus) -> None:
+        """Merge one valve push into the cached ``/info`` snapshot and notify listeners."""
+        valve = self.valves.get(event.device_id or "")
+        if valve is None:
+            return  # a valve we don't track
+        _LOGGER.debug("Valve %s %s", event.device_id, event)
+        self.valves = {**self.valves, event.device_id: apply_valve_event(valve, event)}
+        # Re-publishes the (unchanged) thermostat data to wake every listener, and clears any
+        # prior error state — same effect as the thermostat push path.
+        self.async_set_updated_data(self.data)
+
+    async def async_set_valve(self, mac: str, open_valve: bool) -> dict[str, Any]:
+        """Open/close a shutoff valve; show ``opening``/``closing`` at once.
+
+        The valve takes ~10 s to move and the stream then reports ``opening``->``open`` (or
+        ``closing``->``closed``); the optimistic in-between state just covers the gap.
+        """
+        result = await self.api.async_set_shutoff_valve(mac, open_valve)
+        self._apply_valve_event(
+            ResideoValveStatus(
+                device_id=mac,
+                status=VALVE_STATE_OPENING if open_valve else VALVE_STATE_CLOSING,
+                command_source="app",
+            )
+        )
+        return result
 
     @callback
     def schedule_resync(self) -> None:

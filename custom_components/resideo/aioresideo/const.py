@@ -52,6 +52,30 @@ ACCOUNTS_ENDPOINT = f"{RIS_PUBLIC_API}/v1/accounts"
 THERMOSTAT_V2 = f"{RIS_PUBLIC_API}/v2/devices/thermostats/{{mac}}"
 THERMOSTAT_V1 = f"{RIS_PUBLIC_API}/v1/devices/thermostats/{{mac}}"
 
+# Water shutoff valves (L5 / L7, Huka platform). Found in the app's compiled code
+# (``devices/shutOffValves/``) and confirmed live. Unlike thermostats there is no
+# ``Reported``/``Desired`` shadow and no v2 route: ``GET .../info`` returns the whole device
+# (valve position, flow, pressure, temperature, battery, faults, usage) as one flat body, and
+# the command is ``PUT .../valve``.
+SHUTOFF_VALVE_V1 = f"{RIS_PUBLIC_API}/v1/devices/shutOffValves/{{mac}}"
+
+# ``globalDeviceType`` prefix of the account-graph entry for these devices (``ShutoffValve_L7_T``,
+# ``ShutoffValve_L5_T``). Their global id decodes to ``LyricThermostatDevice`` like every other
+# device, so the type string is the only reliable discriminator.
+SHUTOFF_VALVE_TYPE_PREFIX = "ShutoffValve"
+
+# ``CommandSource`` is mandatory on the valve command (400 ``ParameterIsMissing`` otherwise);
+# ``app`` is what the mobile app sends.
+VALVE_COMMAND_SOURCE = "app"
+VALVE_COMMAND_OPEN = "Open"
+VALVE_COMMAND_CLOSE = "Close"
+
+# Normalised valve states (see ``ResideoShutoffValve.valve_state``).
+VALVE_STATE_OPEN = "open"
+VALVE_STATE_CLOSED = "closed"
+VALVE_STATE_OPENING = "opening"
+VALVE_STATE_CLOSING = "closing"
+
 # Every write body carries this channel id; writes return ``202 {"TransactionId": ...}``.
 DEFAULT_CHANNEL_ID = "ds-notification-service"
 

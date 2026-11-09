@@ -154,6 +154,12 @@
       "air_filter_remaining": { "name": "Air filter remaining" },
       "firmware_version": { "name": "Firmware" },
       "fault_count": { "name": "Faults" },
+      "water_total": { "name": "Water total" },
+      "water_usage_period": { "name": "Water used this period" },
+      "water_temperature": { "name": "Water temperature" },
+      "water_pressure": { "name": "Water pressure" },
+      "leak_status": { "name": "Leak status" },
+      "last_check_in": { "name": "Last check-in" },
       "temperature_actual": { "name": "Temperature (actual)" },
       "status": { "name": "Status" },
       "heat_cool_mode": { "name": "Heat/cool mode" },
@@ -187,7 +193,10 @@
       "freeze_protection": { "name": "Freeze protection" },
       "freeze_protection_configured": { "name": "Freeze protection configured" },
       "away_mode": { "name": "Away mode" },
-      "commercial": { "name": "Commercial mode" }
+      "commercial": { "name": "Commercial mode" },
+      "on_battery_power": { "name": "On battery power" },
+      "micro_leak_test_running": { "name": "Micro-leak test running" },
+      "buzzer": { "name": "Buzzer" }
     },
     "switch": {
       "feels_like": { "name": "Feels Like" },

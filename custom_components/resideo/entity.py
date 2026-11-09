@@ -15,6 +15,7 @@ from .aioresideo import (
     ResideoConfiguration,
     ResideoPriority,
     ResideoRooms,
+    ResideoShutoffValve,
     ResideoThermostat,
 )
 from .const import DOMAIN, MANUFACTURER
@@ -86,6 +87,48 @@ class ResideoEntity(CoordinatorEntity[ResideoDataUpdateCoordinator]):
             model=device.model if device else None,
             sw_version=device.firmware_version if device else None,
             serial_number=device.serial_number if device else None,
+        )
+
+
+class ResideoValveEntity(CoordinatorEntity[ResideoDataUpdateCoordinator]):
+    """Base entity bound to one water shutoff valve (keyed by MAC).
+
+    Valves are held in ``coordinator.valves`` rather than ``coordinator.data`` (which is the
+    thermostat map), so they get their own base. Subclasses set ``_attr_unique_id``.
+    """
+
+    _attr_has_entity_name = True
+    # False keeps the entity available while the valve is offline — for the connectivity sensor.
+    _requires_device_online: bool = True
+
+    def __init__(self, coordinator: ResideoDataUpdateCoordinator, mac: str) -> None:
+        super().__init__(coordinator)
+        self._mac = mac
+
+    @property
+    def valve(self) -> ResideoShutoffValve | None:
+        """The latest ``/info`` snapshot (kept live by the push stream) for this valve."""
+        return self.coordinator.valves.get(self._mac)
+
+    @property
+    def available(self) -> bool:
+        valve = self.valve
+        if not super().available or valve is None:
+            return False
+        return valve.online or not self._requires_device_online
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        valve = self.valve
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._mac)},
+            connections={(dr.CONNECTION_NETWORK_MAC, dr.format_mac(self._mac))},
+            manufacturer=MANUFACTURER,
+            name=(valve.name if valve else None) or f"Resideo valve {self._mac}",
+            model=valve.model if valve else None,
+            sw_version=valve.firmware_version if valve else None,
+            hw_version=valve.hardware_version if valve else None,
+            serial_number=valve.serial_number if valve else None,
         )
 
 
