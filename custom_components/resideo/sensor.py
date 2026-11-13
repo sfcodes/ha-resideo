@@ -73,6 +73,14 @@ def _tvoc(d: ResideoDeviceData) -> StateType:
     return acc.tvoc if acc else None
 
 
+def _selected_priority_rooms(d: ResideoDeviceData) -> str | None:
+    sel = set(d.priority.selected_rooms)
+    if not sel:
+        return None
+    names = [r.name for r in d.rooms.rooms if r.id in sel and r.name]
+    return ", ".join(names) if names else ", ".join(str(i) for i in sorted(sel))
+
+
 DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
     # --- primary environment ---
     # Temperature payloads are always °F regardless of the device's display unit (see
@@ -172,6 +180,11 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
     ResideoSensorEntityDescription(
         key="priority_type", translation_key="priority_type", entity_category=DIAG,
         value_fn=lambda d: d.thermostat.current_priority_type,
+    ),
+    ResideoSensorEntityDescription(
+        key="active_priority_rooms", translation_key="selected_priority_rooms", entity_category=DIAG,
+        value_fn=_selected_priority_rooms,
+        exists_fn=lambda d: bool(d.priority.selected_rooms),
     ),
     # --- maintenance / firmware / faults (diagnostic) ---
     ResideoSensorEntityDescription(

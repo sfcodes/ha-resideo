@@ -121,6 +121,9 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         # ignored, so every write must carry all four limits. Same shared-override trick (keyed by
         # mac) so two limit edits inside the ~2 s read-back window can't clobber each other.
         self._setpoint_limit_overrides: dict[str, dict[str, Any]] = {}
+        # /priority also requires the full body (PriorityStatus, PriorityType, SelectedRooms),
+        # while the mode select and per-room priority switches are separate entities.
+        self._priority_overrides: dict[str, dict[str, Any]] = {}
 
     async def _async_setup(self) -> None:
         """One-time discovery from the account graph: thermostats, SignalR targets, country."""
@@ -335,6 +338,83 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
                 cool_max=ov.get("cool_max", configuration.max_cool_setpoint),
             ),
         )
+
+    def priority_override(self, mac: str) -> dict[str, Any]:
+        """Shared optimistic overrides for a device's room priority configuration."""
+        return self._priority_overrides.setdefault(mac, {})
+
+    def effective_selected_rooms(
+        self, mac: str, priority: ResideoPriority
+    ) -> set[int]:
+        """Return the currently selected room IDs, incorporating any pending per-room overrides."""
+        ov = self.priority_override(mac)
+        base = set(priority.selected_rooms or [])
+        room_ov: dict[int, bool] = ov.get("rooms", {})
+        for r_id, included in room_ov.items():
+            if included:
+                base.add(r_id)
+            else:
+                base.discard(r_id)
+        return base
+
+    async def async_write_priority_type(
+        self,
+        mac: str,
+        priority: ResideoPriority,
+        priority_type: str,
+    ) -> dict[str, Any]:
+        """Set the thermostat's PriorityType ('PickARoom' or 'FollowMe'), preserving selected rooms."""
+        ov = self.priority_override(mac)
+        had_prev = "priority_type" in ov
+        prev = ov.get("priority_type")
+        ov["priority_type"] = priority_type
+        rooms_list = sorted(self.effective_selected_rooms(mac, priority)) or [0]
+        status = priority.priority_status or "PermanentHold"
+        try:
+            return await self.api.async_set_priority(
+                mac, priority_type, rooms_list, status=status
+            )
+        except Exception:
+            if had_prev:
+                ov["priority_type"] = prev
+            else:
+                ov.pop("priority_type", None)
+            raise
+
+    async def async_write_room_priority(
+        self,
+        mac: str,
+        priority: ResideoPriority,
+        room_id: int,
+        included: bool,
+    ) -> dict[str, Any]:
+        """Include or exclude one room from SelectedRooms, preserving PriorityType and other rooms."""
+        ov = self.priority_override(mac)
+        room_ov: dict[int, bool] = ov.setdefault("rooms", {})
+        had_prev = room_id in room_ov
+        prev = room_ov.get(room_id)
+        room_ov[room_id] = included
+        selected = self.effective_selected_rooms(mac, priority)
+        if not selected:
+            # The thermostat requires at least one room in SelectedRooms; revert and raise.
+            if had_prev:
+                room_ov[room_id] = prev  # type: ignore[assignment]
+            else:
+                room_ov.pop(room_id, None)
+            raise ResideoError("At least one room must remain selected in priority configuration")
+        rooms_list = sorted(selected)
+        p_type = ov.get("priority_type") or priority.priority_type or "PickARoom"
+        status = priority.priority_status or "PermanentHold"
+        try:
+            return await self.api.async_set_priority(
+                mac, p_type, rooms_list, status=status
+            )
+        except Exception:
+            if had_prev:
+                room_ov[room_id] = prev  # type: ignore[assignment]
+            else:
+                room_ov.pop(room_id, None)
+            raise
 
     # -- SignalR streaming ----------------------------------------------------
     async def async_start_streams(self) -> None:
