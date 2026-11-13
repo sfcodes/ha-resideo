@@ -73,6 +73,22 @@ def _tvoc(d: ResideoDeviceData) -> StateType:
     return acc.tvoc if acc else None
 
 
+def _ta(d: ResideoDeviceData):
+    return d.rooms.thermostat_accessory
+
+
+def _eim(d: ResideoDeviceData):
+    return d.rooms.eim_accessory
+
+
+def _active_stages(d: ResideoDeviceData) -> str | None:
+    stages = d.thermostat.stages_on
+    if not stages:
+        return "None"
+    on_idx = [str(i + 1) for i, is_on in enumerate(stages) if is_on]
+    return f"Stage {', '.join(on_idx)}" if on_idx else "None"
+
+
 DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
     # --- primary environment ---
     # Temperature payloads are always °F regardless of the device's display unit (see
@@ -83,6 +99,27 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
         value_fn=lambda d: d.thermostat.indoor_temperature,
+    ),
+    ResideoSensorEntityDescription(
+        key="discharge_temperature", translation_key="discharge_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        value_fn=lambda d: d.thermostat.discharge_temperature,
+        exists_fn=lambda d: d.thermostat.discharge_temperature is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="return_temperature", translation_key="return_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        value_fn=lambda d: d.thermostat.return_temperature,
+        exists_fn=lambda d: d.thermostat.return_temperature is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="duct_temperature_delta", translation_key="duct_temperature_delta",
+        device_class=SensorDeviceClass.TEMPERATURE_DELTA, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        value_fn=lambda d: d.thermostat.duct_temperature_delta,
+        exists_fn=lambda d: d.thermostat.duct_temperature_delta is not None,
     ),
     ResideoSensorEntityDescription(
         key="outdoor_temperature", translation_key="outdoor_temperature",
@@ -101,6 +138,27 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.HUMIDITY, native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: d.thermostat.outdoor_humidity,
+    ),
+    ResideoSensorEntityDescription(
+        key="thermostat_local_temperature", translation_key="thermostat_local_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT, entity_category=DIAG,
+        value_fn=lambda d: _ta(d).indoor_temperature if _ta(d) else None,
+        exists_fn=lambda d: _ta(d) is not None and _ta(d).indoor_temperature is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="thermostat_temperature_actual", translation_key="thermostat_temperature_actual",
+        device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT, entity_category=DIAG,
+        value_fn=lambda d: _ta(d).temperature_actual if _ta(d) else None,
+        exists_fn=lambda d: _ta(d) is not None and _ta(d).temperature_actual is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="thermostat_local_humidity", translation_key="thermostat_local_humidity",
+        device_class=SensorDeviceClass.HUMIDITY, native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT, entity_category=DIAG,
+        value_fn=lambda d: _ta(d).indoor_humidity if _ta(d) else None,
+        exists_fn=lambda d: _ta(d) is not None and _ta(d).indoor_humidity is not None,
     ),
     ResideoSensorEntityDescription(
         key="co2", device_class=SensorDeviceClass.CO2,
@@ -300,6 +358,68 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
         key="priority_status", translation_key="priority_status", entity_category=DIAG,
         value_fn=lambda d: d.priority.priority_status,
         exists_fn=lambda d: d.priority.priority_status is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="eim_status", translation_key="eim_status", entity_category=DIAG,
+        value_fn=lambda d: _eim(d).status if _eim(d) else None,
+        exists_fn=lambda d: _eim(d) is not None and _eim(d).status is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="active_demand_mode", translation_key="active_demand_mode", entity_category=DIAG,
+        value_fn=lambda d: d.thermostat.active_demand_mode,
+        exists_fn=lambda d: d.thermostat.active_demand_mode is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="active_stages", translation_key="active_stages", entity_category=DIAG,
+        value_fn=_active_stages,
+        exists_fn=lambda d: bool(d.thermostat.stages_on),
+    ),
+    ResideoSensorEntityDescription(
+        key="air_filter_restart_days", translation_key="air_filter_restart_days",
+        entity_category=DIAG, native_unit_of_measurement=UnitOfTime.DAYS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: d.configuration.air_filter_restart_days,
+        exists_fn=lambda d: d.configuration.air_filter_restart_days is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="backlight_intensity", translation_key="backlight_intensity", entity_category=DIAG,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: d.configuration.backlight_intensity,
+        exists_fn=lambda d: d.configuration.backlight_intensity is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="fault_temp_high_threshold", translation_key="fault_temp_high_threshold",
+        entity_category=DIAG, device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        value_fn=lambda d: d.configuration.fault_temp_high_threshold,
+        exists_fn=lambda d: d.configuration.fault_temp_high_threshold is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="fault_temp_low_threshold", translation_key="fault_temp_low_threshold",
+        entity_category=DIAG, device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        value_fn=lambda d: d.configuration.fault_temp_low_threshold,
+        exists_fn=lambda d: d.configuration.fault_temp_low_threshold is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="fault_humidity_high_threshold", translation_key="fault_humidity_high_threshold",
+        entity_category=DIAG, device_class=SensorDeviceClass.HUMIDITY,
+        native_unit_of_measurement=PERCENTAGE,
+        value_fn=lambda d: d.configuration.fault_humidity_high_threshold,
+        exists_fn=lambda d: d.configuration.fault_humidity_high_threshold is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="fault_humidity_low_threshold", translation_key="fault_humidity_low_threshold",
+        entity_category=DIAG, device_class=SensorDeviceClass.HUMIDITY,
+        native_unit_of_measurement=PERCENTAGE,
+        value_fn=lambda d: d.configuration.fault_humidity_low_threshold,
+        exists_fn=lambda d: d.configuration.fault_humidity_low_threshold is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="last_connectivity_change", translation_key="last_connectivity_change",
+        entity_category=DIAG, device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda d: dt_util.parse_datetime(d.thermostat.last_connectivity_change or ""),
+        exists_fn=lambda d: dt_util.parse_datetime(d.thermostat.last_connectivity_change or "") is not None,
     ),
 )
 
