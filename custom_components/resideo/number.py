@@ -20,7 +20,7 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.const import EntityCategory, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -45,9 +45,55 @@ class ResideoNumberEntityDescription(NumberEntityDescription):
     value_fn: Callable[[ResideoDeviceData], float | None]
     set_fn: Callable[[Resideo, str, float], Awaitable[Any]]
     exists_fn: Callable[[ResideoDeviceData], bool] = lambda _data: True
+    min_value_fn: Callable[[ResideoDeviceData], float | None] | None = None
+    max_value_fn: Callable[[ResideoDeviceData], float | None] | None = None
 
 
 DEVICE_NUMBERS: tuple[ResideoNumberEntityDescription, ...] = (
+    ResideoNumberEntityDescription(
+        key="humidifier_setpoint",
+        translation_key="humidifier_setpoint",
+        device_class=NumberDeviceClass.HUMIDITY,
+        native_unit_of_measurement=PERCENTAGE,
+        native_min_value=10,
+        native_max_value=90,
+        native_step=5,
+        mode=NumberMode.SLIDER,
+        value_fn=lambda d: d.thermostat.humidifier_setpoint,
+        set_fn=lambda api, mac, v: api.async_set_humidifier_setpoint(mac, v),
+        exists_fn=lambda d: (
+            d.configuration.humidifier_enabled
+            or d.thermostat.humidifier_setpoint is not None
+        ),
+        min_value_fn=lambda d: (
+            max(10, d.configuration.min_humidifier_setpoint)
+            if d.configuration.min_humidifier_setpoint is not None
+            else None
+        ),
+        max_value_fn=lambda d: d.configuration.max_humidifier_setpoint,
+    ),
+    ResideoNumberEntityDescription(
+        key="dehumidifier_setpoint",
+        translation_key="dehumidifier_setpoint",
+        device_class=NumberDeviceClass.HUMIDITY,
+        native_unit_of_measurement=PERCENTAGE,
+        native_min_value=10,
+        native_max_value=90,
+        native_step=5,
+        mode=NumberMode.SLIDER,
+        value_fn=lambda d: d.thermostat.dehumidifier_setpoint,
+        set_fn=lambda api, mac, v: api.async_set_dehumidifier_setpoint(mac, v),
+        exists_fn=lambda d: (
+            d.configuration.dehumidifier_enabled
+            or d.thermostat.dehumidifier_setpoint is not None
+        ),
+        min_value_fn=lambda d: d.configuration.min_dehumidifier_setpoint,
+        max_value_fn=lambda d: (
+            min(90, d.configuration.max_dehumidifier_setpoint)
+            if d.configuration.max_dehumidifier_setpoint is not None
+            else None
+        ),
+    ),
     ResideoNumberEntityDescription(
         key="freeze_protection_low_limit",
         translation_key="freeze_protection_low_limit",
@@ -162,6 +208,22 @@ class ResideoNumber(OptimisticWriteMixin, ResideoEntity, NumberEntity):
         if data is None:
             return None
         return {"native_value": self.entity_description.value_fn(data)}
+
+    @property
+    def native_min_value(self) -> float:
+        if self.entity_description.min_value_fn is not None and self._device_data is not None:
+            val = self.entity_description.min_value_fn(self._device_data)
+            if val is not None:
+                return float(val)
+        return super().native_min_value
+
+    @property
+    def native_max_value(self) -> float:
+        if self.entity_description.max_value_fn is not None and self._device_data is not None:
+            val = self.entity_description.max_value_fn(self._device_data)
+            if val is not None:
+                return float(val)
+        return super().native_max_value
 
     @property
     def native_value(self) -> float | None:

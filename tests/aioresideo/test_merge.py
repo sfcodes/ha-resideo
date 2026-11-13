@@ -279,3 +279,27 @@ def test_merge_is_pure(device_shadow, rooms, fixture_loader) -> None:
     apply_live_feed(device_shadow, rooms, _feed(fixture_loader, "live_sensor_builtin.json"))
     assert device_shadow == before_shadow  # inputs untouched
     assert rooms == before_rooms
+
+
+def test_humidification_merge(device_shadow, rooms) -> None:
+    feed = ResideoLiveFeed(
+        "AABBCCDDEEFF",
+        "Humidification",
+        {
+            "HumidifierStatus": "On",
+            "DehumidifierStatus": "Off",
+            "HumidifierSetpoint": 42,
+            "DehumidifierSetpoint": 58,
+            "WindowsProtection": 5,
+            "WindowsProtectionPercentage": 85.0,
+        },
+        None,
+    )
+    shadow, _ = apply_live_feed(device_shadow, rooms, feed)
+    t = ResideoThermostat(shadow)
+    assert t.humidifier_running is True
+    assert t.dehumidifier_running is False
+    assert t.humidifier_setpoint == 42
+    assert t.dehumidifier_setpoint == 58
+    assert t.windows_protection == 5
+    assert t.windows_protection_percentage == 85.0

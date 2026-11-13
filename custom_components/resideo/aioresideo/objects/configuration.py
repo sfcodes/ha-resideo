@@ -136,3 +136,32 @@ class ResideoConfiguration(ResideoBaseObject):
     @property
     def available_schedule_types(self) -> list[str]:
         return (self.reported.get("ScheduleCapabilities") or {}).get("AvailableScheduleTypes") or []
+
+    # -- humidifier / dehumidifier config -------------------------------------
+    @property
+    def humidifier_enabled(self) -> bool:
+        return bool(self.reported.get("HumidifierEnabled", False))
+
+    @property
+    def min_humidifier_setpoint(self) -> int | None:
+        return self.reported.get("HumidificationMinimumSetpoint")
+
+    @property
+    def max_humidifier_setpoint(self) -> int | None:
+        return self.reported.get("HumidificationMaximumSetpoint")
+
+    @property
+    def humidifier_deadband(self) -> int | None:
+        return self.reported.get("HumidifierDeadband")
+
+    @property
+    def dehumidifier_enabled(self) -> bool:
+        return bool(self.reported.get("DehumidifierEnabled", False))
+
+    @property
+    def min_dehumidifier_setpoint(self) -> int | None:
+        return self.reported.get("DehumidificationMinimumSetpoint")
+
+    @property
+    def max_dehumidifier_setpoint(self) -> int | None:
+        return self.reported.get("DehumidificationMaximumSetpoint")

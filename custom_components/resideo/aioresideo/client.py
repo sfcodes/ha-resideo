@@ -387,6 +387,18 @@ class ResideoClient:
             mac, "freezeProtection", {"LowLimitDegrees": int(round(low_limit_degrees))}
         )
 
+    async def set_humidifier_setpoint(self, mac: str, value: float) -> dict[str, Any]:
+        """Set the humidifier target setpoint (% RH). ✅ verified live."""
+        return await self._command(
+            mac, "humidifier/setpoint", {"SetPointValue": int(round(value))}
+        )
+
+    async def set_dehumidifier_setpoint(self, mac: str, value: float) -> dict[str, Any]:
+        """Set the dehumidifier target setpoint (% RH). ✅ verified live."""
+        return await self._command(
+            mac, "dehumidifier/setpoint", {"SetPointValue": int(round(value))}
+        )
+
     async def set_setpoint_capabilities(
         self,
         mac: str,

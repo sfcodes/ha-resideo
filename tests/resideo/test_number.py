@@ -115,3 +115,35 @@ async def test_freeze_protection_write(
         "number", "set_value", {"entity_id": number_id, "value": 42}, blocking=True
     )
     mock_api.async_set_freeze_protection.assert_awaited_once_with(MAC, 42.0)
+
+
+async def test_humidifier_and_dehumidifier_setpoint_writes(
+    hass: HomeAssistant, mock_config_entry, mock_api, device_shadow, configuration_data
+) -> None:
+    configuration_data["Reported"]["HumidifierEnabled"] = True
+    configuration_data["Reported"]["HumidificationMinimumSetpoint"] = 0
+    configuration_data["Reported"]["HumidificationMaximumSetpoint"] = 90
+    configuration_data["Reported"]["DehumidifierEnabled"] = True
+    configuration_data["Reported"]["DehumidificationMinimumSetpoint"] = 10
+    configuration_data["Reported"]["DehumidificationMaximumSetpoint"] = 100
+    device_shadow["Reported"]["HumidifierSetpoint"] = 40
+    device_shadow["Reported"]["DehumidifierSetpoint"] = 60
+
+    await setup_integration(hass, mock_config_entry, mock_api)
+
+    hum_id = eid(hass, "number", f"{MAC}_humidifier_setpoint")
+    dehum_id = eid(hass, "number", f"{MAC}_dehumidifier_setpoint")
+    assert float(hass.states.get(hum_id).state) == 40
+    assert float(hass.states.get(dehum_id).state) == 60
+
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": hum_id, "value": 45}, blocking=True
+    )
+    mock_api.async_set_humidifier_setpoint.assert_awaited_once_with(MAC, 45.0)
+    assert float(hass.states.get(hum_id).state) == 45
+
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": dehum_id, "value": 55}, blocking=True
+    )
+    mock_api.async_set_dehumidifier_setpoint.assert_awaited_once_with(MAC, 55.0)
+    assert float(hass.states.get(dehum_id).state) == 55
