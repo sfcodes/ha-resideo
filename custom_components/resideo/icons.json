@@ -7,6 +7,10 @@
       "battery_status": { "default": "mdi:battery" },
       "heat_setpoint": { "default": "mdi:fire" },
       "cool_setpoint": { "default": "mdi:snowflake" },
+      "humidifier_setpoint": { "default": "mdi:air-humidifier" },
+      "dehumidifier_setpoint": { "default": "mdi:air-humidifier-off" },
+      "windows_protection": { "default": "mdi:window-closed-variant" },
+      "windows_protection_percentage": { "default": "mdi:window-closed-variant" },
       "setpoint_status": { "default": "mdi:thermostat" },
       "equipment_status": { "default": "mdi:hvac" },
       "demand": { "default": "mdi:gauge" },
@@ -42,9 +46,15 @@
       "temperature_units": { "default": "mdi:temperature-fahrenheit" },
       "matter_status": { "default": "mdi:home-automation" },
       "priority_status": { "default": "mdi:home-thermometer" },
+      "dehum_away_setpoint": { "default": "mdi:air-humidifier-off" },
+      "dehum_away_cool_setpoint": { "default": "mdi:snowflake" },
+      "humidifier_deadband": { "default": "mdi:water-sync" },
       "occupancy_timeout": { "default": "mdi:timer-outline" }
     },
     "binary_sensor": {
+      "humidifier_running": { "default": "mdi:air-humidifier" },
+      "dehumidifier_running": { "default": "mdi:air-humidifier-off" },
+      "dehum_away_active": { "default": "mdi:home-export-outline" },
       "vacation_hold": { "default": "mdi:airplane" },
       "freeze_protection": { "default": "mdi:snowflake-alert" },
       "freeze_protection_configured": { "default": "mdi:snowflake-check" },
@@ -60,9 +70,12 @@
       "exclude_temperature": { "default": "mdi:thermometer-off" }
     },
     "select": {
-      "occupancy_sensitivity": { "default": "mdi:motion-sensor" }
+      "occupancy_sensitivity": { "default": "mdi:motion-sensor" },
+      "fan_mode": { "default": "mdi:fan" }
     },
     "number": {
+      "humidifier_setpoint": { "default": "mdi:air-humidifier" },
+      "dehumidifier_setpoint": { "default": "mdi:air-humidifier-off" },
       "freeze_protection_low_limit": { "default": "mdi:snowflake-thermometer" },
       "heat_setpoint_min": { "default": "mdi:fire" },
       "heat_setpoint_max": { "default": "mdi:fire" },

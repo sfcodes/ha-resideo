@@ -126,6 +126,33 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
         value_fn=lambda d: d.thermostat.cool_setpoint,
     ),
     ResideoSensorEntityDescription(
+        key="humidifier_setpoint", translation_key="humidifier_setpoint",
+        device_class=SensorDeviceClass.HUMIDITY, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        value_fn=lambda d: d.thermostat.humidifier_setpoint,
+        exists_fn=lambda d: d.thermostat.humidifier_setpoint is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="dehumidifier_setpoint", translation_key="dehumidifier_setpoint",
+        device_class=SensorDeviceClass.HUMIDITY, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        value_fn=lambda d: d.thermostat.dehumidifier_setpoint,
+        exists_fn=lambda d: d.thermostat.dehumidifier_setpoint is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="windows_protection", translation_key="windows_protection", entity_category=DIAG,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: d.thermostat.windows_protection,
+        exists_fn=lambda d: d.thermostat.windows_protection is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="windows_protection_percentage", translation_key="windows_protection_percentage",
+        entity_category=DIAG, native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: d.thermostat.windows_protection_percentage,
+        exists_fn=lambda d: d.thermostat.windows_protection_percentage is not None,
+    ),
+    ResideoSensorEntityDescription(
         key="setpoint_status", translation_key="setpoint_status", entity_category=DIAG,
         value_fn=lambda d: d.thermostat.setpoint_status,
     ),
@@ -300,6 +327,27 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
         key="priority_status", translation_key="priority_status", entity_category=DIAG,
         value_fn=lambda d: d.priority.priority_status,
         exists_fn=lambda d: d.priority.priority_status is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="dehum_away_setpoint", translation_key="dehum_away_setpoint", entity_category=DIAG,
+        device_class=SensorDeviceClass.HUMIDITY, state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        value_fn=lambda d: d.thermostat.dehum_away_setpoint,
+        exists_fn=lambda d: d.thermostat.dehum_away_setpoint is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="dehum_away_cool_setpoint", translation_key="dehum_away_cool_setpoint",
+        entity_category=DIAG, device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.FAHRENHEIT,
+        value_fn=lambda d: d.thermostat.dehum_away_cool_setpoint,
+        exists_fn=lambda d: d.thermostat.dehum_away_cool_setpoint is not None,
+    ),
+    ResideoSensorEntityDescription(
+        key="humidifier_deadband", translation_key="humidifier_deadband", entity_category=DIAG,
+        native_unit_of_measurement=PERCENTAGE, state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: d.configuration.humidifier_deadband,
+        exists_fn=lambda d: d.configuration.humidifier_deadband is not None,
     ),
 )
 

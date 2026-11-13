@@ -166,6 +166,16 @@ class Resideo:
     ) -> dict[str, Any]:
         return await self.client.set_freeze_protection(mac, low_limit_degrees)
 
+    async def async_set_humidifier_setpoint(
+        self, mac: str, value: float
+    ) -> dict[str, Any]:
+        return await self.client.set_humidifier_setpoint(mac, value)
+
+    async def async_set_dehumidifier_setpoint(
+        self, mac: str, value: float
+    ) -> dict[str, Any]:
+        return await self.client.set_dehumidifier_setpoint(mac, value)
+
     async def async_set_setpoint_capabilities(
         self,
         mac: str,

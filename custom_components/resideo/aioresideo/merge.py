@@ -229,6 +229,30 @@ def _apply_displayed(
         _reported(shadow)[key] = v
 
 
+def _apply_humidification(
+    shadow: dict[str, Any], rooms: dict[str, Any], value: dict[str, Any]
+) -> None:
+    """Merge a ``Humidification`` LiveFeed push into ``Reported``."""
+    rep = _reported(shadow)
+    inner = value.get("Value") if isinstance(value.get("Value"), dict) else value
+    if not isinstance(inner, dict):
+        return
+    _set_if_present(rep, "HumidifierSetpoint", inner, "HumidifierSetpoint")
+    _set_if_present(rep, "DehumidifierSetpoint", inner, "DehumidifierSetpoint")
+    _set_if_present(rep, "WindowsProtection", inner, "WindowsProtection")
+    _set_if_present(rep, "WindowsProtectionPercentage", inner, "WindowsProtectionPercentage")
+    if inner.get("HumidifierRequest") is not None:
+        rep["HumidifierRequest"] = inner["HumidifierRequest"]
+    elif inner.get("HumidifierStatus") is not None:
+        st = str(inner["HumidifierStatus"]).lower()
+        rep["HumidifierRequest"] = 1 if st in ("on", "true", "1", "running", "active") else 0
+    if inner.get("DehumidifierRequest") is not None:
+        rep["DehumidifierRequest"] = inner["DehumidifierRequest"]
+    elif inner.get("DehumidifierStatus") is not None:
+        st = str(inner["DehumidifierStatus"]).lower()
+        rep["DehumidifierRequest"] = 1 if st in ("on", "true", "1", "running", "active") else 0
+
+
 # -- dispatch (the authoritative set of merged property types) -----------------
 _DISPATCH = {
     "Setpoint": _apply_setpoint,
@@ -237,6 +261,7 @@ _DISPATCH = {
     "FanSwitch": _apply_fan_switch,
     "Sensor": _apply_sensor,
     "Rooms": _apply_rooms,
+    "Humidification": _apply_humidification,
     "DisplayedIndoorTemperature": partial(_apply_displayed, key="DisplayedIndoorTemperature"),
     "DisplayedIndoorHumidity": partial(_apply_displayed, key="DisplayedIndoorHumidity"),
     "DisplayedOutdoorTemperature": partial(_apply_displayed, key="DisplayedOutdoorTemperature"),
