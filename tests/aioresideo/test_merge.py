@@ -279,3 +279,59 @@ def test_merge_is_pure(device_shadow, rooms, fixture_loader) -> None:
     apply_live_feed(device_shadow, rooms, _feed(fixture_loader, "live_sensor_builtin.json"))
     assert device_shadow == before_shadow  # inputs untouched
     assert rooms == before_rooms
+
+
+def test_duct_temperature_merge(device_shadow, rooms) -> None:
+    feed = ResideoLiveFeed(
+        "AABBCCDDEEFF",
+        "DuctTemperature",
+        {"DischargeTemp": 84.5, "ReturnTemp": 72.5},
+        None,
+    )
+    shadow, _ = apply_live_feed(device_shadow, rooms, feed)
+    t = ResideoThermostat(shadow)
+    assert t.discharge_temperature == 84.5
+    assert t.return_temperature == 72.5
+    assert t.duct_temperature_delta == 12.0
+
+
+def test_sensor_eim_header_routes_to_first_remote(device_shadow, rooms) -> None:
+    """When an EIM (AccessoryId 1, Type EquipmentInterfaceModule) sits between the thermostat (0)
+    and the first remote sensor (2), a remote Sensor push with header AccessoryId 1 routes to 2."""
+    with_eim = copy.deepcopy(rooms)
+    with_eim["Rooms"][0]["Accessories"].append(
+        {
+            "AccessoryId": 1,
+            "AccessoryAttribute": {"Type": "EquipmentInterfaceModule", "Model": "4353"},
+            "AccessoryValue": {"Status": "Ok"},
+        }
+    )
+    with_eim["Rooms"][1]["Accessories"][0]["AccessoryId"] = 2
+    eim_header_push = ResideoLiveFeed(
+        "AABBCCDDEEFF",
+        "Sensor",
+        {
+            "RoomId": 0,
+            "AccessoryId": 1,
+            "AccessoryAttribute": {"Id": 0, "Type": "EI", "Name": "Other"},
+            "AccessoryValue": {
+                "Id": 0,
+                "IndoorTemperature": 71.0,
+                "IndoorHumidity": 52,
+                "OccupancyDet": True,
+                "MotionDet": False,
+                "BatteryStatus": "Ok",
+                "RssiAverage": -48,
+                "Status": "Ok",
+            },
+        },
+        None,
+    )
+    _s, new_rooms = apply_live_feed(device_shadow, with_eim, eim_header_push)
+    rr = ResideoRooms(new_rooms)
+    assert rr.eim_accessory is not None and rr.eim_accessory.status == "Ok"
+    _room, remote = rr.air_sensor_accessories()[0]
+    assert remote.accessory_id == 2
+    assert remote.indoor_temperature == 71.0
+    assert remote.occupancy is True
+    assert remote.motion is False

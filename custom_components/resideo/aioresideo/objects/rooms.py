@@ -195,6 +195,15 @@ class ResideoRooms(ResideoBaseObject):
                     return accessory
         return None
 
+    @property
+    def eim_accessory(self) -> ResideoAccessory | None:
+        """The RedLINK Equipment Interface Module (EIM) accessory, if any."""
+        for room in self.rooms:
+            for accessory in room.accessories:
+                if accessory.type == "EquipmentInterfaceModule":
+                    return accessory
+        return None
+
     def air_sensor_accessories(self) -> list[tuple[ResideoRoom, ResideoAccessory]]:
         """(room, accessory) pairs for each remote IndoorAirSensor — the sub-devices."""
         return [
