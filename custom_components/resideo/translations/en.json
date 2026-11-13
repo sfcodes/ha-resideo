@@ -175,6 +175,7 @@
       "temperature_units": { "name": "Temperature units" },
       "matter_status": { "name": "Matter status" },
       "priority_status": { "name": "Priority status" },
+      "selected_priority_rooms": { "name": "Active priority rooms" },
       "occupancy_timeout": { "name": "Occupancy timeout" }
     },
     "binary_sensor": {
@@ -195,10 +196,13 @@
       "schedule": { "name": "Schedule" },
       "emergency_heat": { "name": "Emergency heat" },
       "exclude_motion": { "name": "Exclude motion" },
-      "exclude_temperature": { "name": "Exclude temperature" }
+      "exclude_temperature": { "name": "Exclude temperature" },
+      "room_priority": { "name": "Room priority" },
+      "thermostat_room_priority": { "name": "Include thermostat room in priority" }
     },
     "select": {
-      "occupancy_sensitivity": { "name": "Occupancy sensitivity" }
+      "occupancy_sensitivity": { "name": "Occupancy sensitivity" },
+      "priority_mode": { "name": "Priority mode" }
     },
     "number": {
       "freeze_protection_low_limit": { "name": "Freeze protection floor" },

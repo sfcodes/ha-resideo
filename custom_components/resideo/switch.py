@@ -151,6 +151,21 @@ async def async_setup_entry(
                     ResideoAccessorySwitch(coordinator, mac, room, accessory, desc)
                     for desc in ACCESSORY_SWITCHES
                 )
+            # Room priority toggle for each remote room sensor
+            if data.priority.priority_type is not None:
+                entities.append(
+                    ResideoRoomPrioritySwitch(coordinator, mac, room, accessory)
+                )
+        # Also expose a priority toggle for the thermostat's built-in room (Room 0)
+        if data.priority.priority_type is not None:
+            for room in data.rooms.rooms:
+                if room.id == 0:
+                    entities.append(
+                        ResideoThermostatRoomPrioritySwitch(
+                            coordinator, mac, room.id, room.name
+                        )
+                    )
+                    break
     async_add_entities(entities)
 
 
@@ -263,4 +278,120 @@ class ResideoAccessorySwitch(OptimisticWriteMixin, ResideoAccessoryEntity, Switc
             raise HomeAssistantError(
                 f"Failed to set {self.entity_description.key}: {err}"
             ) from err
+        await self._async_post_write({"is_on": on})
+
+
+class ResideoRoomPrioritySwitch(OptimisticWriteMixin, ResideoAccessoryEntity, SwitchEntity):
+    """Toggle whether this remote room sensor's room is included in active priority averaging."""
+
+    _attr_translation_key = "room_priority"
+
+    def __init__(
+        self,
+        coordinator: ResideoDataUpdateCoordinator,
+        mac: str,
+        room,
+        accessory: ResideoAccessory,
+    ) -> None:
+        super().__init__(
+            coordinator, mac, room.id, accessory.accessory_id, room.name, accessory.model
+        )
+        self._attr_unique_id = (
+            f"{mac}_room{room.id}_acc{accessory.accessory_id}_room_priority"
+        )
+
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        priority = self.priority
+        if priority is None:
+            return None
+        return {"is_on": self._room_id in (priority.selected_rooms or [])}
+
+    @callback
+    def _on_optimistic_cleared(self, key: str) -> None:
+        room_ov = self.coordinator.priority_override(self._mac).get("rooms")
+        if isinstance(room_ov, dict):
+            room_ov.pop(self._room_id, None)
+
+    @property
+    def is_on(self) -> bool | None:
+        if "is_on" in self._optimistic:
+            return self._optimistic["is_on"]
+        priority = self.priority
+        if priority is None:
+            return None
+        return self._room_id in (priority.selected_rooms or [])
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._async_set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._async_set(False)
+
+    async def _async_set(self, on: bool) -> None:
+        priority = self.priority
+        if priority is None:
+            raise HomeAssistantError("Priority configuration is unavailable")
+        try:
+            await self.coordinator.async_write_room_priority(
+                self._mac, priority, self._room_id, on
+            )
+        except ResideoError as err:
+            raise HomeAssistantError(f"Failed to set room priority: {err}") from err
+        await self._async_post_write({"is_on": on})
+
+
+class ResideoThermostatRoomPrioritySwitch(OptimisticWriteMixin, ResideoEntity, SwitchEntity):
+    """Toggle whether the thermostat's built-in sensor (Room 0) is included in priority averaging."""
+
+    _attr_translation_key = "thermostat_room_priority"
+
+    def __init__(
+        self,
+        coordinator: ResideoDataUpdateCoordinator,
+        mac: str,
+        room_id: int,
+        room_name: str | None,
+    ) -> None:
+        super().__init__(coordinator, mac)
+        self._room_id = room_id
+        self._room_name = room_name
+        self._attr_unique_id = f"{mac}_room{room_id}_priority"
+
+    def _confirmed_values(self) -> dict[str, Any] | None:
+        priority = self.priority
+        if priority is None:
+            return None
+        return {"is_on": self._room_id in (priority.selected_rooms or [])}
+
+    @callback
+    def _on_optimistic_cleared(self, key: str) -> None:
+        room_ov = self.coordinator.priority_override(self._mac).get("rooms")
+        if isinstance(room_ov, dict):
+            room_ov.pop(self._room_id, None)
+
+    @property
+    def is_on(self) -> bool | None:
+        if "is_on" in self._optimistic:
+            return self._optimistic["is_on"]
+        priority = self.priority
+        if priority is None:
+            return None
+        return self._room_id in (priority.selected_rooms or [])
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._async_set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._async_set(False)
+
+    async def _async_set(self, on: bool) -> None:
+        priority = self.priority
+        if priority is None:
+            raise HomeAssistantError("Priority configuration is unavailable")
+        try:
+            await self.coordinator.async_write_room_priority(
+                self._mac, priority, self._room_id, on
+            )
+        except ResideoError as err:
+            raise HomeAssistantError(f"Failed to set thermostat room priority: {err}") from err
         await self._async_post_write({"is_on": on})

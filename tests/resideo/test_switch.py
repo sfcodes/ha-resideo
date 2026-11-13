@@ -115,3 +115,36 @@ async def test_sensitivity_select_holds_until_reported(
     await hass.async_block_till_done()
     assert hass.states.get(select_id).state == "High"
     assert coordinator.accessory_override(MAC, 1) == {}  # shared override cleared
+
+
+async def test_room_priority_switches_and_mode_select(
+    hass: HomeAssistant, init_integration, mock_api
+) -> None:
+    """Per-room priority switches and priority mode select compose full /priority writes."""
+    room0_sw = eid(hass, "switch", f"{MAC}_room0_priority")
+    room1_sw = eid(hass, "switch", f"{MAC}_room1_acc1_room_priority")
+    mode_sel = eid(hass, "select", f"{MAC}_priority_mode_select")
+
+    assert hass.states.get(room0_sw).state == "off"
+    assert hass.states.get(room1_sw).state == "off"
+    assert hass.states.get(mode_sel).state == "PickARoom"
+
+    await hass.services.async_call(
+        "switch", "turn_on", {"entity_id": room0_sw}, blocking=True
+    )
+    await hass.services.async_call(
+        "switch", "turn_on", {"entity_id": room1_sw}, blocking=True
+    )
+    assert mock_api.async_set_priority.await_count == 2
+    # Second call includes both room 0 and room 1 via shared override coalescing
+    second_call = mock_api.async_set_priority.await_args_list[1]
+    assert second_call.args == (MAC, "PickARoom", [0, 1])
+
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": mode_sel, "option": "FollowMe"},
+        blocking=True,
+    )
+    third_call = mock_api.async_set_priority.await_args_list[2]
+    assert third_call.args == (MAC, "FollowMe", [0, 1])
