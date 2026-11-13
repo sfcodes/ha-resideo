@@ -19,7 +19,7 @@ never appears in the account graph here, even when authentication succeeds. That
 [Lyric](https://www.home-assistant.io/integrations/lyric/) territory.
 
 > ⚠️ Reverse-engineered and unofficial. The consumer API is undocumented and may change without
-> notice.
+> notice. Full protocol and schema reference: [`docs/resideo-api-spec.md`](resideo-api-spec.md).
 
 ## Layout
 

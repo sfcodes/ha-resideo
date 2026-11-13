@@ -332,7 +332,9 @@ ruff check .
 pytest   # tests/aioresideo (client) + tests/resideo (HA integration layer)
 ```
 
-The vendored client has its own docs in [`docs/CLIENT.md`](docs/CLIENT.md). The repo doubles
+The vendored client has its own docs in [`docs/CLIENT.md`](docs/CLIENT.md) and the full
+reverse-engineered protocol/schema specification in
+[`docs/resideo-api-spec.md`](docs/resideo-api-spec.md). The repo doubles
 as a local Home Assistant dev instance under `config/` (gitignored), with
 `config/custom_components` symlinked to `custom_components/` so your edits load live.
 
