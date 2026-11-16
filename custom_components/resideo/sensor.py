@@ -20,7 +20,6 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
-    CONCENTRATION_PARTS_PER_MILLION,
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
@@ -39,6 +38,16 @@ from .coordinator import (
     ResideoDeviceData,
 )
 from .entity import ResideoAccessoryEntity, ResideoEntity
+
+try:
+    from homeassistant.const import UnitOfRatio
+except ImportError:
+    # Home Assistant before 2026.7, where the unit is this constant instead.
+    from homeassistant.const import (
+        CONCENTRATION_PARTS_PER_MILLION as PARTS_PER_MILLION,
+    )
+else:
+    PARTS_PER_MILLION = UnitOfRatio.PARTS_PER_MILLION
 
 # Reads are pure push off the coordinator — no per-entity update work to limit.
 PARALLEL_UPDATES = 0
@@ -104,7 +113,7 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
     ),
     ResideoSensorEntityDescription(
         key="co2", device_class=SensorDeviceClass.CO2,
-        native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
+        native_unit_of_measurement=PARTS_PER_MILLION,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=_co2, exists_fn=lambda d: _co2(d) is not None,
     ),
@@ -336,7 +345,7 @@ ACCESSORY_SENSORS: tuple[ResideoAccessorySensorEntityDescription, ...] = (
     ),
     ResideoAccessorySensorEntityDescription(
         key="co2", device_class=SensorDeviceClass.CO2,
-        native_unit_of_measurement=CONCENTRATION_PARTS_PER_MILLION,
+        native_unit_of_measurement=PARTS_PER_MILLION,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda a: a.co2, exists_fn=lambda a: a.co2 is not None,
     ),

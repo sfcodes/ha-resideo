@@ -24,6 +24,24 @@ from .coordinator import ResideoDataUpdateCoordinator, ResideoDeviceData
 # device to apply the command and the shadow to reflect it (~8s observed live).
 RECONCILE_DELAY = 10  # seconds
 
+# Home Assistant 2026.8 added ``via_device_id`` (the parent's registry id) and has since
+# deprecated ``via_device`` (its identifier, ambiguous across config entries). Older cores
+# reject the new key, so the room-sensor link below uses whichever this core understands.
+_HAS_VIA_DEVICE_ID = hasattr(dr, "async_get_device_id_by_identifier")
+
+
+def thermostat_device_info(mac: str, device: ResideoThermostat | None) -> DeviceInfo:
+    """Device-registry info for one thermostat (keyed by MAC)."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, mac)},
+        connections={(dr.CONNECTION_NETWORK_MAC, dr.format_mac(mac))},
+        manufacturer=MANUFACTURER,
+        name=(device.name if device else None) or f"Resideo {mac}",
+        model=device.model if device else None,
+        sw_version=device.firmware_version if device else None,
+        serial_number=device.serial_number if device else None,
+    )
+
 
 class ResideoEntity(CoordinatorEntity[ResideoDataUpdateCoordinator]):
     """Base entity bound to one Resideo thermostat (keyed by MAC).
@@ -77,16 +95,7 @@ class ResideoEntity(CoordinatorEntity[ResideoDataUpdateCoordinator]):
 
     @property
     def device_info(self) -> DeviceInfo:
-        device = self.device
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._mac)},
-            connections={(dr.CONNECTION_NETWORK_MAC, dr.format_mac(self._mac))},
-            manufacturer=MANUFACTURER,
-            name=(device.name if device else None) or f"Resideo {self._mac}",
-            model=device.model if device else None,
-            sw_version=device.firmware_version if device else None,
-            serial_number=device.serial_number if device else None,
-        )
+        return thermostat_device_info(self._mac, self.device)
 
 
 class ResideoAccessoryEntity(ResideoEntity):
@@ -128,15 +137,25 @@ class ResideoAccessoryEntity(ResideoEntity):
     @property
     def device_info(self) -> DeviceInfo:
         accessory = self.accessory
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={(DOMAIN, f"{self._mac}_room{self._room_id}_acc{self._accessory_id}")},
             name=self._room_name or f"Resideo room {self._room_id}",
             manufacturer=MANUFACTURER,
             model=self._accessory_model,
             sw_version=accessory.software_revision if accessory else None,
             serial_number=accessory.serial_number if accessory else None,
-            via_device=(DOMAIN, self._mac),
         )
+        thermostat = (DOMAIN, self._mac)
+        if _HAS_VIA_DEVICE_ID:
+            # The thermostat is registered in ``async_setup_entry``, before any platform.
+            info["via_device_id"] = dr.async_get_device_id_by_identifier(
+                self.hass,
+                thermostat,
+                config_entry_id=self.coordinator.config_entry.entry_id,
+            )
+        else:
+            info["via_device"] = thermostat
+        return info
 
 
 class OptimisticWriteMixin:

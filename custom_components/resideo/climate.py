@@ -131,7 +131,7 @@ class ResideoClimate(OptimisticWriteMixin, ResideoEntity, ClimateEntity):
     _attr_translation_key = "thermostat"  # for preset_mode state-attribute translations
     # API payloads are always °F, regardless of the thermostat's display unit or the app's
     # unit preference (see ResideoConfiguration.temperature_units) — HA converts for display.
-    _attr_temperature_unit = UnitOfTemperature.FAHRENHEIT
+    _attr_native_temperature_unit = UnitOfTemperature.FAHRENHEIT
     # Fallbacks when /configuration is unavailable. Normally hvac_modes / fan_modes /
     # min_temp / max_temp are derived live from device capabilities below.
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL, HVACMode.HEAT_COOL]
@@ -243,7 +243,7 @@ class ResideoClimate(OptimisticWriteMixin, ResideoEntity, ClimateEntity):
         return super().max_temp
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         return self.device.indoor_temperature if self.device else None
 
     @property
@@ -276,7 +276,7 @@ class ResideoClimate(OptimisticWriteMixin, ResideoEntity, ClimateEntity):
         return action
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         device = self.device
         if not device:
             return None
@@ -284,21 +284,30 @@ class ResideoClimate(OptimisticWriteMixin, ResideoEntity, ClimateEntity):
             return self._optimistic.get("cool_setpoint", device.cool_setpoint)
         if self.hvac_mode == HVACMode.HEAT:
             return self._optimistic.get("heat_setpoint", device.heat_setpoint)
-        return None  # HEAT_COOL uses target_temperature_low/high
+        return None  # HEAT_COOL uses native_target_temperature_low/high
 
     @property
-    def target_temperature_low(self) -> float | None:
+    def native_target_temperature_low(self) -> float | None:
         device = self.device
         if not device or self.hvac_mode != HVACMode.HEAT_COOL:
             return None
         return self._optimistic.get("heat_setpoint", device.heat_setpoint)
 
     @property
-    def target_temperature_high(self) -> float | None:
+    def native_target_temperature_high(self) -> float | None:
         device = self.device
         if not device or self.hvac_mode != HVACMode.HEAT_COOL:
             return None
         return self._optimistic.get("cool_setpoint", device.cool_setpoint)
+
+    # Home Assistant 2026.11 renamed the temperature members to native_*. Earlier cores read
+    # only the old names, kept here as aliases; from 2026.11 the native ones win when a class
+    # provides both.
+    _attr_temperature_unit = _attr_native_temperature_unit
+    current_temperature = native_current_temperature
+    target_temperature = native_target_temperature
+    target_temperature_low = native_target_temperature_low
+    target_temperature_high = native_target_temperature_high
 
     @property
     def preset_mode(self) -> str | None:
