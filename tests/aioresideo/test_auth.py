@@ -247,11 +247,49 @@ def test_build_authorize_url_is_unique_per_call() -> None:
         "https://login.resideo.com/whatever?code=the-code&state=st",
         "?code=the-code&state=st",  # bare query, e.g. copied out of devtools
         "the-code",  # bare code, no state to check
+        # Chrome's console error, which is where issue #13's reporter found the address.
+        f"Failed to launch '{REDIRECT_URI}?code=the-code&state=st' because the scheme does not"
+        " have a registered handler.",
+        # The same line as "Copy message" yields it, source link first.
+        f"login?state=hKFo2SB:1 Failed to launch '{REDIRECT_URI}?code=the-code&state=st'"
+        " because the scheme does not have a registered handler.",
+        f'"{REDIRECT_URI}?code=the-code&state=st"',
+        # Firefox has no entry for the redirect, only the header that announced it.
+        f"Location: {REDIRECT_URI}?code=the-code&state=st",
+        f"HTTP/2 302\r\nlocation: {REDIRECT_URI}?code=the-code&state=st\r\ncontent-length: 0\r\n",
     ],
-    ids=["custom-scheme", "whitespace", "https", "bare-query", "bare-code"],
+    ids=[
+        "custom-scheme",
+        "whitespace",
+        "https",
+        "bare-query",
+        "bare-code",
+        "chrome-console-error",
+        "chrome-console-error-with-source",
+        "quoted",
+        "location-header",
+        "response-headers",
+    ],
 )
 def test_parse_authorize_redirect_accepts_what_users_actually_paste(pasted: str) -> None:
     assert parse_authorize_redirect(pasted, "st") == "the-code"
+
+
+@pytest.mark.parametrize(
+    "pasted",
+    [
+        # Firefox's last Network entry: the request whose redirect failed, not the redirect.
+        "https://login.resideo.com/authorize/resume?state=st",
+        "Prevented navigation to “https://login.resideo.com/authorize/resume?state=st” due to"
+        " an unknown protocol.",
+        "the scheme does not have a registered handler",
+    ],
+    ids=["firefox-resume-entry", "firefox-console-warning", "prose"],
+)
+def test_parse_authorize_redirect_rejects_a_paste_without_the_redirect(pasted: str) -> None:
+    with pytest.raises(ResideoAuthError) as exc:
+        parse_authorize_redirect(pasted, "st")
+    assert exc.value.code == "invalid_code"
 
 
 def test_parse_authorize_redirect_rejects_a_stale_attempt() -> None:

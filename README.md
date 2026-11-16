@@ -254,7 +254,9 @@ with your browser** first. It hands you Resideo's real sign-in page, you log in
 there like any other website, and you paste the resulting redirect back into Home Assistant. In
 practice the CAPTCHA doesn't even appear — Resideo's bot detection is reacting to the headless
 login, not to you. The step includes click-by-click instructions; the one thing that trips
-people up is that your browser's Network panel has to be open **before** you sign in.
+people up is that your browser's Network panel has to be open **before** you sign in. And the
+red "Failed to launch" error your browser may show afterwards is not a failure: it is the
+redirect you are there to copy.
 
 **Sign-in is rejected, but the same password works in your phone app.** Your account is still on
 Resideo's older login — the one behind the **Resideo** app (formerly **Honeywell Home**) — not

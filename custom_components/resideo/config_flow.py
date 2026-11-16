@@ -162,8 +162,9 @@ class ResideoConfigFlow(ConfigFlow, domain=DOMAIN):
 
         Auth0's bot detection can demand a CAPTCHA that a headless client cannot solve; here
         the human drives the page, so the CAPTCHA is simply part of signing in. The redirect
-        lands on the mobile app's custom scheme, which the browser cannot open — the URL is
-        still in the address bar, and that is what gets pasted.
+        lands on the mobile app's custom scheme, which the browser cannot open — and it never
+        reaches the address bar, so the user copies it out of the browser's developer tools.
+        Where it sits there differs per browser; the step's description walks through each.
         """
         if self._authorize is None:
             self._authorize = build_authorize_url()

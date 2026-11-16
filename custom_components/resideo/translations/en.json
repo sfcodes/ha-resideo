@@ -20,7 +20,7 @@
       },
       "browser": {
         "title": "Sign in with your browser",
-        "description": "**1.** [**Open the Resideo sign-in page**]({url}) — but do not sign in yet.\n\n**2. In that new tab, open the Network panel before signing in.** The sign-in code appears once, in a single request; if Network is not already recording you will have to start over. Developer tools attach per tab, so it must be that tab:\n- Chrome / Edge: `F12` (Mac: `⌘⌥I`), then click **Network**\n- Firefox: `⌘⌥E` (Windows/Linux: `Ctrl+Shift+E`)\n- Safari: enable Settings → Advanced → \"Show features for web developers\", then `⌘⌥I` → **Network**\n\n**3. Now sign in.** Afterwards the page just sits there and the address bar does not change — that is expected, and means it worked.\n\n**4. Copy the last entry in the Network list** — greyed out / canceled, name starting `callback?code=`. Right-click → **Copy** → **Copy link address**.\n\n**5. Paste it below.** Just the entry's name works too.",
+        "description": "**1.** [**Open the Resideo sign-in page**]({url}) — but do not sign in yet.\n\n**2. In that new tab, open the Network panel before signing in.** The sign-in code appears once, in a single request; if Network is not already recording you will have to start over. Developer tools attach per tab, so it must be that tab:\n- Chrome / Edge: `F12` (Mac: `⌘⌥I`), then click **Network**\n- Firefox: `⌘⌥E` (Windows/Linux: `Ctrl+Shift+E`)\n- Safari: enable Settings → Advanced → \"Show features for web developers\", then `⌘⌥I` → **Network**\n\n**3. Now sign in.** Afterwards the page just sits there and the address bar does not change — that is expected, and means it worked. So is the red \"Failed to launch 'com.resideo.firstalert://...'\" error in Chrome's and Edge's Console, and the \"Prevented navigation ... due to an unknown protocol\" warning in Firefox's.\n\n**4. Copy the redirect address** — it starts `com.resideo.firstalert://` and has `callback?code=` in it. Where it sits depends on the browser:\n- Chrome / Edge: the last entry in the Network list, in red with status `(canceled)`, name starting `callback?code=`. Right-click → **Copy** → **Copy URL**.\n- Firefox: there is no such entry. Click the last one instead — `resume?state=...`, marked `NS_ERROR_UNKNOWN_PROTOCOL` — and under **Headers** → **Response Headers**, right-click `Location` → **Copy Value**.\n\n**5. Paste it below.** Just the entry's name works too, and so does the whole \"Failed to launch\" error line.",
         "data": {
           "redirect_url": "Redirect address"
         }
@@ -88,7 +88,7 @@
       },
       "invalid_code": {
         "title": "No sign-in code in that address",
-        "description": "That does not look like the redirect address — it carries no sign-in code.\n\nStart the browser sign-in again and copy the whole `com.resideo.firstalert://...` address, including everything after the `?`.",
+        "description": "That does not look like the redirect address — it carries no sign-in code.\n\nStart the browser sign-in again and copy the whole `com.resideo.firstalert://...` address, including everything after the `?`. In Firefox that address is not the last Network entry's own link (`resume?state=...`) but the `Location` response header inside that entry.",
         "menu_options": {
           "browser": "Start the browser sign-in again",
           "login": "Email and password",

@@ -139,25 +139,38 @@ def build_authorize_url() -> AuthorizeRequest:
     return AuthorizeRequest(f"{AUTH0_AUTHORIZE_URL}?{query}", code_verifier, state)
 
 
+# The redirect seldom arrives bare. Chrome quotes it inside its "Failed to launch '…' because
+# the scheme does not have a registered handler" console error, and Firefox only has it as
+# the value of a ``Location`` response header. So split the paste on whitespace and quotes,
+# then look for the piece that carries the result. (Firefox's messages use curly quotes.)
+_PASTED_PIECE = re.compile(r"[^\s'\"\u201c\u201d\u2018\u2019<>]+")
+_CARRIES_RESULT = re.compile(r"(?:^|[?&])(?:code|error)=")
+
+
 def parse_authorize_redirect(pasted: str, expected_state: str) -> str:
     """Pull the authorization ``code`` out of whatever the user pasted back.
 
-    Accepts the full ``com.resideo.firstalert://…?code=…&state=…`` redirect (what the
-    browser shows when it cannot open the app's custom scheme), any URL carrying the same
-    query, or a bare code. ``state`` is verified whenever the paste carries one.
+    Accepts the full ``com.resideo.firstalert://…?code=…&state=…`` redirect, any URL or bare
+    query carrying the same parameters, either of those with text around it (a console error
+    line, a ``Location:`` header, a block of response headers), or a bare code. ``state`` is
+    verified whenever the paste carries one.
     """
-    pasted = pasted.strip()
-    if not pasted:
+    pieces = _PASTED_PIECE.findall(pasted)
+    if not pieces:
         raise ResideoAuthError("Nothing pasted", step="browser", code="invalid_code")
 
-    query = parse_qs(urlparse(pasted).query) if "?" in pasted else {}
-    if not query and "=" in pasted:
-        # A bare query string, e.g. copied out of devtools without the scheme.
-        query = parse_qs(pasted.lstrip("?"))
+    redirect = next((piece for piece in pieces if _CARRIES_RESULT.search(piece)), None)
+    if redirect is None:
+        if len(pieces) == 1 and "=" not in pieces[0]:
+            # Treat it as a bare code; nothing to cross-check but the exchange will reject junk.
+            return pieces[0]
+        raise ResideoAuthError(
+            "That paste carries no `code` parameter",
+            step="browser",
+            code="invalid_code",
+        )
 
-    if not query:
-        # Treat it as a bare code; nothing to cross-check but the exchange will reject junk.
-        return pasted
+    query = parse_qs(urlparse(redirect).query if "?" in redirect else redirect)
 
     if error := query.get("error", [None])[0]:
         raise ResideoAuthError(
