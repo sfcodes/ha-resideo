@@ -277,12 +277,18 @@ async def test_unload_leaves_the_repair_standing(
     assert _issue(hass, mock_config_entry) is None
 
 
+def _devices(hass: HomeAssistant, entry) -> tuple[dr.DeviceEntry, list[dr.DeviceEntry]]:
+    """The entry's thermostat device, and its other devices (the remote room sensors)."""
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    thermostat = next(d for d in devices if (DOMAIN, MAC) in d.identifiers)
+    return thermostat, [d for d in devices if d is not thermostat]
+
+
 async def test_remove_config_entry_device(hass: HomeAssistant, init_integration) -> None:
     entry = init_integration
     registry = dr.async_get(hass)
 
-    live = registry.async_get_device(identifiers={(DOMAIN, MAC)})
-    assert live is not None
+    live, _ = _devices(hass, entry)
     stale = registry.async_get_or_create(
         config_entry_id=entry.entry_id, identifiers={(DOMAIN, "REMOVED_SENSOR")}
     )

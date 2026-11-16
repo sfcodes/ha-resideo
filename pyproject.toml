@@ -21,4 +21,6 @@ known-first-party = ["custom_components", "tests"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# pytest-homeassistant: Home Assistant must install its httpx alias before respx is imported.
+addopts = "-p no:respx"
 testpaths = ["tests"]

@@ -5,10 +5,10 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.components.diagnostics import (
+from pytest_homeassistant.components.diagnostics import (
     get_diagnostics_for_config_entry,
 )
-from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
+from pytest_homeassistant.typing import ClientSessionGenerator
 
 from custom_components.resideo.aioresideo.exceptions import ResideoConnectionError
 

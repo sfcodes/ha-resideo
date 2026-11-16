@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.resideo.aioresideo.const import REDIRECT_URI
 from custom_components.resideo.aioresideo.exceptions import (
