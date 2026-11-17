@@ -41,7 +41,7 @@ API_BASE_URL = "https://api.ha.resideo.com"
 # Azure APIM subscription key (prod) — mandatory on the command service. Unchanged by the move.
 OCP_APIM_SUBSCRIPTION_KEY = "b60885e8a9b44680a29ea1f03452878a"
 
-# Service bases (see resideo-api-spec.md §2). ``{mac}`` = raw device MAC, e.g. 5CFCE1B7F5BA.
+# Service bases (see resideo-api-spec.md §2). ``{mac}`` = raw device MAC, e.g. A0B1C2D3E4F5.
 RIS_PUBLIC_API = "/ris-public-api/api"
 ACCOUNTS_ENDPOINT = f"{RIS_PUBLIC_API}/v1/accounts"
 

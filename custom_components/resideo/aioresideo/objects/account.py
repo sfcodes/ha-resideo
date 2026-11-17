@@ -25,10 +25,10 @@ class ResideoLocation:
 class ResideoAccountDevice(ResideoBaseObject):
     """A device flattened from the consumer account graph by ``ResideoClient.iter_devices``.
 
-    - ``device_id`` / ``mac`` is the raw **MAC** (e.g. ``5CFCE1B7F5BA``) — what the thermostat
+    - ``device_id`` / ``mac`` is the raw **MAC** (e.g. ``A0B1C2D3E4F5``) — what the thermostat
       device endpoints key on.
     - ``global_id`` is a base64 GraphQL global id of the form ``base64("<Type>:<id>")`` —
-      e.g. decoding ``THlyaWNU…`` yields ``LyricThermostatDevice:5CFCE1B7F5BA``.
+      e.g. decoding ``THlyaWNU…`` yields ``LyricThermostatDevice:A0B1C2D3E4F5``.
     - ``device_kind`` is that decoded ``<Type>`` and is the **reliable** device-class signal;
       ``global_device_type`` is only a model name (e.g. ``Denali_S1200``) that does *not*
       contain "thermostat", so it can't be relied on alone.

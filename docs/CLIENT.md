@@ -47,10 +47,10 @@ async def main():
         for device in await api.async_get_devices():
             print(device.name, device.device_id)
 
-        shadow = await api.async_get_device("5CFCE1B7F5BA")
+        shadow = await api.async_get_device("A0B1C2D3E4F5")
         print(shadow.indoor_temperature, shadow.cool_setpoint)
 
-        await api.async_set_cool_setpoint("5CFCE1B7F5BA", 74.0)
+        await api.async_set_cool_setpoint("A0B1C2D3E4F5", 74.0)
 ```
 
 ### Real-time stream (SignalR)
