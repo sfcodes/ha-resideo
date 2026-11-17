@@ -1,0 +1,1541 @@
+{
+  "home": {
+    "integration_version": "0.3.3",
+    "home_assistant_version": "2026.11.1",
+    "name": "elitepro-s1200-redlink",
+    "hardware": "Two ElitePRO S1200 thermostats (Denali_S1200), one with two RedLINK indoor air sensors (model 4354)"
+  },
+  "data": {
+    "account": {
+      "data": {
+        "id": "**REDACTED**",
+        "firstName": "**REDACTED**",
+        "lastName": "**REDACTED**",
+        "contactEmail": "**REDACTED**",
+        "primaryPhoneNumber": "**REDACTED**",
+        "countryCode": "US",
+        "locale": "en_US",
+        "consumerUsers": [
+          {
+            "id": "**REDACTED**",
+            "role": "OWNER",
+            "consumerAccount": {
+              "id": "**REDACTED**",
+              "consumerAccountClassification": "RESIDENTIAL",
+              "locations": [
+                {
+                  "id": "**REDACTED**",
+                  "name": "**REDACTED**",
+                  "consumerAccountId": "**REDACTED**",
+                  "address": "**REDACTED**",
+                  "geoCoordinate": "**REDACTED**",
+                  "consumerDevices": [
+                    {
+                      "id": "**REDACTED**",
+                      "name": "**REDACTED**",
+                      "consumerDeviceLocationId": "**REDACTED**",
+                      "device": {
+                        "id": "**REDACTED**",
+                        "deviceId": "**REDACTED**",
+                        "product": {
+                          "productName": "ElitePro S1200 Thermostat",
+                          "productCategories": [
+                            "AIR"
+                          ],
+                          "productFamily": "Thermostat",
+                          "productPlatform": "Denali"
+                        },
+                        "globalDeviceType": "Denali_S1200"
+                      },
+                      "createdAt": "**REDACTED**",
+                      "updatedAt": "**REDACTED**",
+                      "compositionMode": "STANDALONE"
+                    },
+                    {
+                      "id": "**REDACTED**",
+                      "name": "**REDACTED**",
+                      "consumerDeviceLocationId": "**REDACTED**",
+                      "device": {
+                        "id": "**REDACTED**",
+                        "deviceId": "**REDACTED**",
+                        "product": {
+                          "productName": "ElitePro S1200 Thermostat",
+                          "productCategories": [
+                            "AIR"
+                          ],
+                          "productFamily": "Thermostat",
+                          "productPlatform": "Denali"
+                        },
+                        "globalDeviceType": "Denali_S1200"
+                      },
+                      "createdAt": "**REDACTED**",
+                      "updatedAt": "**REDACTED**",
+                      "compositionMode": "STANDALONE"
+                    }
+                  ],
+                  "weatherLocationId": "**REDACTED**",
+                  "timeZone": "America/New_York",
+                  "isConfirmed": false
+                }
+              ]
+            }
+          }
+        ],
+        "pendingServices": [],
+        "consentRequired": true
+      },
+      "errors": []
+    },
+    "account_devices": [
+      {
+        "model": "Denali_S1200",
+        "kind": "LyricThermostatDevice",
+        "supported": true
+      },
+      {
+        "model": "Denali_S1200",
+        "kind": "LyricThermostatDevice",
+        "supported": true
+      }
+    ],
+    "capture_since": "2026-11-16T03:21:31.884+00:00",
+    "devices": [
+      {
+        "shadow": {
+          "DeviceId": "**REDACTED**",
+          "Reported": {
+            "DeviceName": "**REDACTED**",
+            "DataSyncInfo": {
+              "State": "Completed",
+              "TransactionId": "asFfNSe7cxcwvbgr"
+            },
+            "SystemSwitch": "Heat",
+            "HeatCoolMode": "Heat",
+            "Setpoint": {
+              "SetpointStatus": "PermanentHold",
+              "HeatSetpoint": 70.0,
+              "CoolSetpoint": 80.0,
+              "FanSwitch": {
+                "Position": "On",
+                "Speed": 1
+              }
+            },
+            "DisplayedIndoorTemperature": 70.0,
+            "DisplayedOutdoorTemperature": 45.0,
+            "DisplayedIndoorHumidity": 43,
+            "DisplayedOutdoorHumidity": 61,
+            "FanSwitch": {
+              "Position": "On",
+              "Speed": 1
+            },
+            "FanReq": 1,
+            "OperationStatus": {
+              "Mode": "EquipmentOff",
+              "FanRequest": false,
+              "CirculationFanRequest": false
+            },
+            "HeatAndCoolDemand": {
+              "CurrentStage": 0,
+              "Demand": 0,
+              "Mode": "Heat",
+              "StagesOn": [
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+              ],
+              "FanRequest": false,
+              "CirculationFanRequest": false
+            },
+            "VacationHold": {
+              "Enabled": false
+            },
+            "VentilationTimer": 0,
+            "FeelsLikeEnabled": true,
+            "ActiveAdaptiveRecoveryMode": "AdaptiveIntelligentRecovery",
+            "IsAdaptiveRecoveryActive": false,
+            "ScheduleEnabled": false,
+            "Online": true,
+            "ThermostatFaults": [],
+            "BackLightState": "Inactive",
+            "CurrentSchedulePeriod": {
+              "Day": "Sunday",
+              "Period": "Sleep"
+            },
+            "ScheduleType": {
+              "ScheduleType": "Timed",
+              "ScheduleSubtype": "NA"
+            },
+            "DemandResponseState": {
+              "StartTimeUtc": "2026-09-18T21:00:00.000+00:00",
+              "EventId": 61993,
+              "AffectedDevices": [
+                "Hvac"
+              ],
+              "IsOptOutable": true,
+              "IsLocallyOptOutable": true,
+              "OptedOut": false,
+              "Phases": [
+                {
+                  "Duration": "02:00:00",
+                  "CoolDelta": 2.0
+                }
+              ],
+              "CurrentDrEventState": "Completed"
+            },
+            "CurrentPriorityType": "PickARoom",
+            "VentilationBoostTimer": 0,
+            "CurrentLanguage": "English",
+            "InbuiltSensorState": {
+              "RoomId": 0,
+              "RoomName": "**REDACTED**"
+            },
+            "RegistrationDate": "**REDACTED**",
+            "LastConnectivityStatusChange": "2026-09-29T16:31:54.921+00:00",
+            "AirFilterReminders": {
+              "1": {
+                "RemainingDays": 0,
+                "IsAlertRaised": false
+              }
+            },
+            "FanReqReasons": [
+              "FanSwitch"
+            ],
+            "IndoorAirQuality": {
+              "TotalVolatileOrganicCompounds": {
+                "Status": "Ok",
+                "Quality": "Medium"
+              },
+              "EstimatedCarbonDioxide": {
+                "Status": "Ok",
+                "Quality": "Good"
+              },
+              "HumidityQuality": "Ideal",
+              "TotalIndoorAirQuality": {
+                "Status": "Ok",
+                "Quality": "Medium"
+              }
+            },
+            "FirmwareUpdate": {
+              "JobId": "",
+              "SwPackage": "01.3607.730",
+              "Status": "Success"
+            },
+            "FirmwareSystem": {
+              "SwPackage": "01.3607.730",
+              "ImageStateResponse": {
+                "Status": "Valid",
+                "Reason": "System operating normally"
+              },
+              "LastCheckedResponse": {
+                "Time": "2026-11-15T19:52:34.000+00:00",
+                "Status": "No error"
+              },
+              "LastUpdated": "2026-11-03T02:24:15.000+00:00"
+            },
+            "ZoneData": {
+              "ZoneValues": {},
+              "ZoneAttributes": {},
+              "ZoneSummary": {}
+            },
+            "ZoneAccessories": {
+              "ZoneAccessories": [
+                {
+                  "AccessoryIndex": 0,
+                  "AccessoryType": "Thermostat",
+                  "ConnectionMethod": "WI",
+                  "Name": "**REDACTED**",
+                  "Model": "Unknown OS",
+                  "SerialNumber": "**REDACTED**",
+                  "SoftwareRevision": "01.3607.730",
+                  "HardwareRevision": "DENALI_TSTAT-001",
+                  "RssiAverage": -43
+                },
+                {
+                  "AccessoryIndex": 1,
+                  "AccessoryType": "IndoorAirSensor",
+                  "ConnectionMethod": "RL",
+                  "Name": "**REDACTED**",
+                  "Model": "4354",
+                  "SerialNumber": "**REDACTED**",
+                  "SoftwareRevision": "2.1.5.0",
+                  "HardwareRevision": "RL3IAS3215-003-A",
+                  "BatteryStatus": "Ok",
+                  "RssiAverage": -54
+                },
+                {
+                  "AccessoryIndex": 2,
+                  "AccessoryType": "IndoorAirSensor",
+                  "ConnectionMethod": "RL",
+                  "Name": "**REDACTED**",
+                  "Model": "4354",
+                  "SerialNumber": "**REDACTED**",
+                  "SoftwareRevision": "2.1.5.0",
+                  "HardwareRevision": "RL3IAS3215-003-A",
+                  "BatteryStatus": "Ok",
+                  "RssiAverage": -48
+                }
+              ]
+            },
+            "ThermostatDhwZone": {}
+          },
+          "Desired": {
+            "ZoneData": {
+              "ZoneValues": {},
+              "ZoneAttributes": {},
+              "ZoneSummary": {}
+            },
+            "ZoneAccessories": {
+              "ZoneAccessories": []
+            },
+            "ThermostatDhwZone": {}
+          }
+        },
+        "rooms": {
+          "DeviceId": "**REDACTED**",
+          "GroupId": 0,
+          "GroupName": "**REDACTED**",
+          "Rooms": [
+            {
+              "Id": 0,
+              "Name": "**REDACTED**",
+              "Type": "Other",
+              "OverallMotion": true,
+              "Accessories": [
+                {
+                  "AccessoryId": 0,
+                  "AccessoryAttribute": {
+                    "Type": "Thermostat",
+                    "ConnectionMethod": "WI",
+                    "Name": "**REDACTED**",
+                    "UserChangeEnable": false,
+                    "Model": "Unknown OS",
+                    "SerialNumber": "**REDACTED**",
+                    "SoftwareRevision": "01.3607.730",
+                    "HardwareRevision": "DENALI_TSTAT-001"
+                  },
+                  "AccessoryValue": {
+                    "IndoorHumidity": 45,
+                    "MotionDet": false,
+                    "OccupancyDet": true,
+                    "IndoorTemperature": 71,
+                    "ExcludeMotion": false,
+                    "Status": "Ok",
+                    "RssiAverage": -43,
+                    "PollutantLevels": [],
+                    "TotalVolatileOrganicCompounds": {
+                      "Measurement": 125,
+                      "Displayed": true
+                    },
+                    "CarbonDioxide": {
+                      "Measurement": 679,
+                      "Displayed": true
+                    },
+                    "TemperatureActual": 69.609
+                  }
+                }
+              ],
+              "AvgTemperature": 70.0,
+              "AvgHumidity": 45.0
+            },
+            {
+              "Id": 1,
+              "Name": "**REDACTED**",
+              "Type": "Bedroom",
+              "OverallMotion": false,
+              "Accessories": [
+                {
+                  "AccessoryId": 1,
+                  "AccessoryAttribute": {
+                    "Type": "IndoorAirSensor",
+                    "ConnectionMethod": "RL",
+                    "Name": "**REDACTED**",
+                    "UserChangeEnable": false,
+                    "Model": "4354",
+                    "SerialNumber": "**REDACTED**",
+                    "SoftwareRevision": "2.1.5.0",
+                    "HardwareRevision": "RL3IAS3215-003-A"
+                  },
+                  "AccessoryValue": {
+                    "IndoorHumidity": 43,
+                    "MotionDet": false,
+                    "OccupancyDet": false,
+                    "IndoorTemperature": 71.0,
+                    "ExcludeTemp": false,
+                    "ExcludeMotion": false,
+                    "OccupancySensitivity": "Medium",
+                    "OccupancyTimeout": 0,
+                    "Status": "Ok",
+                    "BatteryStatus": "Ok",
+                    "RssiAverage": -54,
+                    "PollutantLevels": [],
+                    "TemperatureActual": 70.719
+                  }
+                }
+              ],
+              "AvgTemperature": 70.0,
+              "AvgHumidity": 43.0
+            },
+            {
+              "Id": 2,
+              "Name": "**REDACTED**",
+              "Type": "Bedroom",
+              "OverallMotion": false,
+              "Accessories": [
+                {
+                  "AccessoryId": 2,
+                  "AccessoryAttribute": {
+                    "Type": "IndoorAirSensor",
+                    "ConnectionMethod": "RL",
+                    "Name": "**REDACTED**",
+                    "UserChangeEnable": false,
+                    "Model": "4354",
+                    "SerialNumber": "**REDACTED**",
+                    "SoftwareRevision": "2.1.5.0",
+                    "HardwareRevision": "RL3IAS3215-003-A"
+                  },
+                  "AccessoryValue": {
+                    "IndoorHumidity": 42,
+                    "MotionDet": false,
+                    "OccupancyDet": false,
+                    "IndoorTemperature": 72,
+                    "ExcludeTemp": false,
+                    "ExcludeMotion": false,
+                    "OccupancySensitivity": "Medium",
+                    "OccupancyTimeout": 0,
+                    "Status": "Ok",
+                    "BatteryStatus": "Ok",
+                    "RssiAverage": -47,
+                    "PollutantLevels": [],
+                    "TemperatureActual": 72.102,
+                    "Identify": false
+                  }
+                }
+              ],
+              "AvgTemperature": 72.0,
+              "AvgHumidity": 42.0
+            }
+          ]
+        },
+        "configuration": {
+          "DeviceId": "**REDACTED**",
+          "Reported": {
+            "FanSwitchCapabilities": {
+              "Positions": [
+                "On",
+                "Auto",
+                "Circulate"
+              ],
+              "MaxSpeed": 1
+            },
+            "SystemSwitchCapabilities": [
+              "EmergencyHeat",
+              "Heat",
+              "Off",
+              "Cool",
+              "Auto"
+            ],
+            "MinimumCoolSetpointAllowed": 50.0,
+            "MaximumCoolSetpointAllowed": 90.0,
+            "MinimumHeatSetpointAllowed": 50.0,
+            "MaximumHeatSetpointAllowed": 90.0,
+            "SetpointDeadband": 0.0,
+            "CommercialConfiguration": false,
+            "BackLightIntensity": 10,
+            "MaximumBackLightIntensity": 10,
+            "MinimumBackLightIntensity": 0,
+            "AllowedAdaptiveRecoveryModes": [
+              "None",
+              "AdaptiveIntelligentRecovery"
+            ],
+            "TemperatureUnits": "F",
+            "SupportedCapabilities": [
+              "AccessoryValues",
+              "AirFilterTimer",
+              "BackLight",
+              "DehumidificationTimer",
+              "Fan",
+              "FeelsLike",
+              "FaultThresholds",
+              "HumidificationTimer",
+              "Groups",
+              "Matter",
+              "Rooms",
+              "PeriodNames",
+              "AdaptiveIntellegentRecovery",
+              "SensorSchedule",
+              "SetUpConfiguration",
+              "StreamStart",
+              "VentilationBoostTimer",
+              "VentilationTimer",
+              "FreezeProtection",
+              "IndoorAirQuality",
+              "AwayModeOverride",
+              "TemperatureControl",
+              "RemoteChangeAllowedSetpoint",
+              "RemoteChangeActivatableBackLightIntensity",
+              "AutoCapableBackLightIntensity"
+            ],
+            "ScheduleCapabilities": {
+              "AvailableScheduleTypes": [
+                "None",
+                "Geofenced",
+                "GeofencedWithSleep",
+                "TimedNorthAmerica"
+              ],
+              "SchedulableFan": true,
+              "SchedulableSysSwitchOff": false
+            },
+            "AllowedTimeIncrements": 15,
+            "SystemConfiguration": {
+              "HeatingSystem": "CompressorHeat",
+              "HeatingStages": 3,
+              "CoolingSystem": "CompressorCool",
+              "CoolingStages": 2
+            },
+            "MaximumAllowedRoomsPerGroup": 20,
+            "MaximumGroupsPerGroupOfGroupsAllowed": 15,
+            "MaximumAllowedRooms": 20,
+            "MaximumAccessoriesPerRoom": 4,
+            "MaximumAllowedGroups": 1,
+            "HumidityHidden": false,
+            "FreezeProtection": {
+              "Configured": true,
+              "Active": false,
+              "LowLimitDegrees": 40
+            },
+            "TemperatureUnitsWritable": false,
+            "Backlight": {
+              "Active": 10,
+              "Inactive": 10,
+              "RemoteChangeIndication": true,
+              "AutoBacklightLevel": true,
+              "AutoLevel": 5
+            },
+            "BacklightCapability": {
+              "Active": {
+                "Minimum": 1,
+                "Maximum": 10
+              },
+              "Inactive": {
+                "Minimum": 0,
+                "Maximum": 10
+              }
+            },
+            "AirFilterReminders": {
+              "1": {
+                "IsCalendarDays": false,
+                "IsReminderEnabled": false,
+                "RestartDays": 0
+              }
+            },
+            "Matter": {
+              "CommissioningStatus": "Commissioned",
+              "VendorId": 4890,
+              "ProductId": 4352,
+              "CustomFlowFlag": 1,
+              "DiscoveryCapabilitiesBitmask": 4,
+              "DiscriminatorValue": "**REDACTED**",
+              "Fabrics": [
+                {
+                  "VendorId": 4996,
+                  "Label": "**REDACTED**"
+                }
+              ]
+            },
+            "DisplayConfiguration": {
+              "IdleScreenConfiguration": {
+                "MaximumAllowedSetting": 10,
+                "CurrentSetting": 2,
+                "MaximumAllowedColorSetting": 7,
+                "CurrentColorSetting": 11,
+                "MotionTriggerToHomeScreen": true
+              }
+            },
+            "AwayModeOverride": false,
+            "DealerInformation": "**REDACTED**",
+            "FaultThresholds": {
+              "TemperatureHighThreshold": 82.0,
+              "TemperatureLowThreshold": 60.0,
+              "HumidityHighThreshold": 70,
+              "ZoneEnablesTemperature": {},
+              "ZoneEnablesHumidity": {}
+            }
+          },
+          "Desired": {}
+        },
+        "priority": {
+          "DeviceId": "**REDACTED**",
+          "PriorityStatus": "PermanentHold",
+          "Priority": {
+            "PriorityType": "PickARoom",
+            "SelectedRooms": [
+              0,
+              1,
+              2
+            ],
+            "Rooms": [
+              {
+                "Id": 0,
+                "Name": "**REDACTED**",
+                "AvgTemperature": 70.0,
+                "AvgHumidity": 45.0,
+                "OverallMotion": true,
+                "Accessories": [
+                  {
+                    "Id": 0,
+                    "SensorType": "Thermostat",
+                    "ExcludeMotion": false,
+                    "Temperature": 71.0,
+                    "Status": "Ok",
+                    "DetectMotion": true
+                  }
+                ]
+              },
+              {
+                "Id": 1,
+                "Name": "**REDACTED**",
+                "AvgTemperature": 70.0,
+                "AvgHumidity": 43.0,
+                "OverallMotion": false,
+                "Accessories": [
+                  {
+                    "Id": 1,
+                    "SensorType": "IndoorAirSensor",
+                    "ExcludeTemperature": false,
+                    "ExcludeMotion": false,
+                    "Temperature": 71.0,
+                    "Status": "Ok",
+                    "DetectMotion": false
+                  }
+                ]
+              },
+              {
+                "Id": 2,
+                "Name": "**REDACTED**",
+                "AvgTemperature": 72.0,
+                "AvgHumidity": 42.0,
+                "OverallMotion": false,
+                "Accessories": [
+                  {
+                    "Id": 2,
+                    "SensorType": "IndoorAirSensor",
+                    "ExcludeTemperature": false,
+                    "ExcludeMotion": false,
+                    "Temperature": 72.0,
+                    "Status": "Ok",
+                    "DetectMotion": false
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "pushes": {
+          "DisplayedOutdoorHumidity": {
+            "merged_in_memory": true,
+            "count": 1,
+            "first_seen": "2026-11-16T03:27:18.662+00:00",
+            "last_seen": "2026-11-16T03:27:18.662+00:00",
+            "shapes": [
+              {
+                "count": 1,
+                "samples": [
+                  {
+                    "at": "2026-11-16T03:27:18.662+00:00",
+                    "value": {
+                      "Value": 61,
+                      "Sensor": "Ok"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "Sensor": {
+            "merged_in_memory": true,
+            "count": 7,
+            "first_seen": "2026-11-16T03:22:35.208+00:00",
+            "last_seen": "2026-11-16T03:26:50.066+00:00",
+            "shapes": [
+              {
+                "count": 4,
+                "samples": [
+                  {
+                    "at": "2026-11-16T03:26:50.066+00:00",
+                    "value": {
+                      "RoomId": 0,
+                      "AccessoryId": 0,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "TS",
+                        "ConnectionMethod": "WI",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "Unknown OS",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "01.3607.730",
+                        "HardwareRevision": "DENALI_TSTAT-001"
+                      },
+                      "AccessoryValue": {
+                        "Id": 0,
+                        "IndoorHumidity": 45,
+                        "MotionDet": false,
+                        "OccupancyDet": true,
+                        "IndoorTemperature": 71,
+                        "ExcludeMotion": false,
+                        "Status": "Ok",
+                        "RssiAverage": -43,
+                        "PollutantLevels": [],
+                        "TotalVolatileOrganicCompounds": {
+                          "Measurement": 125
+                        },
+                        "CarbonDioxide": {
+                          "Measurement": 679
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "at": "2026-11-16T03:26:35.012+00:00",
+                    "value": {
+                      "RoomId": 0,
+                      "AccessoryId": 0,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "TS",
+                        "ConnectionMethod": "WI",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "Unknown OS",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "01.3607.730",
+                        "HardwareRevision": "DENALI_TSTAT-001"
+                      },
+                      "AccessoryValue": {
+                        "Id": 0,
+                        "IndoorHumidity": 45,
+                        "MotionDet": true,
+                        "OccupancyDet": true,
+                        "IndoorTemperature": 71,
+                        "ExcludeMotion": false,
+                        "Status": "Ok",
+                        "RssiAverage": -43,
+                        "PollutantLevels": [],
+                        "TotalVolatileOrganicCompounds": {
+                          "Measurement": 126
+                        },
+                        "CarbonDioxide": {
+                          "Measurement": 679
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "at": "2026-11-16T03:26:33.305+00:00",
+                    "value": {
+                      "RoomId": 0,
+                      "AccessoryId": 0,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "TS",
+                        "ConnectionMethod": "WI",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "Unknown OS",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "01.3607.730",
+                        "HardwareRevision": "DENALI_TSTAT-001"
+                      },
+                      "AccessoryValue": {
+                        "Id": 0,
+                        "IndoorHumidity": 45,
+                        "MotionDet": false,
+                        "OccupancyDet": true,
+                        "IndoorTemperature": 71,
+                        "ExcludeMotion": false,
+                        "Status": "Ok",
+                        "RssiAverage": -43,
+                        "PollutantLevels": [],
+                        "TotalVolatileOrganicCompounds": {
+                          "Measurement": 126
+                        },
+                        "CarbonDioxide": {
+                          "Measurement": 679
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "count": 3,
+                "samples": [
+                  {
+                    "at": "2026-11-16T03:26:50.050+00:00",
+                    "value": {
+                      "RoomId": 1,
+                      "AccessoryId": 1,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "IS",
+                        "ConnectionMethod": "RL",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "4354",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "2.1.5.0",
+                        "HardwareRevision": "RL3IAS3215-003-A"
+                      },
+                      "AccessoryValue": {
+                        "Id": 1,
+                        "IndoorHumidity": 42,
+                        "MotionDet": false,
+                        "OccupancyDet": false,
+                        "IndoorTemperature": 72,
+                        "Identify": false,
+                        "ExcludeTemp": false,
+                        "ExcludeMotion": false,
+                        "OccupancySensitivity": "Medium",
+                        "OccupancyTimeout": 0,
+                        "Status": "Ok",
+                        "BatteryStatus": "Ok",
+                        "RssiAverage": -47,
+                        "PollutantLevels": []
+                      }
+                    }
+                  },
+                  {
+                    "at": "2026-11-16T03:26:33.310+00:00",
+                    "value": {
+                      "RoomId": 1,
+                      "AccessoryId": 1,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "IS",
+                        "ConnectionMethod": "RL",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "4354",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "2.1.5.0",
+                        "HardwareRevision": "RL3IAS3215-003-A"
+                      },
+                      "AccessoryValue": {
+                        "Id": 1,
+                        "IndoorHumidity": 42,
+                        "MotionDet": false,
+                        "OccupancyDet": false,
+                        "IndoorTemperature": 72,
+                        "Identify": false,
+                        "ExcludeTemp": false,
+                        "ExcludeMotion": false,
+                        "OccupancySensitivity": "Medium",
+                        "OccupancyTimeout": 0,
+                        "Status": "Ok",
+                        "BatteryStatus": "Ok",
+                        "RssiAverage": -48,
+                        "PollutantLevels": []
+                      }
+                    }
+                  },
+                  {
+                    "at": "2026-11-16T03:22:35.216+00:00",
+                    "value": {
+                      "RoomId": 0,
+                      "AccessoryId": 0,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "TS",
+                        "ConnectionMethod": "WI",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "Unknown OS",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "01.3607.730",
+                        "HardwareRevision": "DENALI_TSTAT-001"
+                      },
+                      "AccessoryValue": {
+                        "Id": 0,
+                        "IndoorHumidity": 43,
+                        "MotionDet": false,
+                        "OccupancyDet": false,
+                        "IndoorTemperature": 71,
+                        "Identify": false,
+                        "ExcludeTemp": false,
+                        "ExcludeMotion": false,
+                        "OccupancySensitivity": "Medium",
+                        "OccupancyTimeout": 0,
+                        "Status": "Ok",
+                        "BatteryStatus": "Ok",
+                        "RssiAverage": -54,
+                        "PollutantLevels": []
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "writes": [
+          {
+            "at": "2026-11-16T03:24:45.864+00:00",
+            "command": "feelsLike",
+            "body": {
+              "FeelsLikeEnabled": true,
+              "ChannelId": "ds-notification-service"
+            },
+            "result": {
+              "TransactionId": "Fr4nSBLCFaygIiTc"
+            },
+            "confirmation": {
+              "at": "2026-11-16T03:24:46.880+00:00",
+              "change": "FeelsLikeRequest",
+              "direction": "AppInitiated",
+              "success": true
+            }
+          },
+          {
+            "at": "2026-11-16T03:24:54.295+00:00",
+            "command": "adaptiveIntelligentRecovery",
+            "body": {
+              "Mode": "AdaptiveIntelligentRecovery",
+              "ChannelId": "ds-notification-service"
+            },
+            "result": {
+              "TransactionId": "3pR7GhmskZla9skC"
+            },
+            "confirmation": {
+              "at": "2026-11-16T03:24:55.722+00:00",
+              "change": "AdaptiveIntelligentRecoveryChangeRequest",
+              "direction": "AppInitiated",
+              "success": true
+            }
+          },
+          {
+            "at": "2026-11-16T03:25:02.662+00:00",
+            "command": "schedule/enabled",
+            "body": {
+              "ScheduleEnabled": false,
+              "ChannelId": "ds-notification-service"
+            },
+            "result": {
+              "TransactionId": "Z1pHWcs4Y08uLTpF"
+            },
+            "confirmation": {
+              "at": "2026-11-16T03:25:03.507+00:00",
+              "change": "scheduleEnabled",
+              "direction": "AppInitiated",
+              "success": true
+            }
+          },
+          {
+            "at": "2026-11-16T03:25:11.060+00:00",
+            "command": "accessories/1/accessoryValue",
+            "body": {
+              "sensitivity": "Medium",
+              "excludeMotion": false,
+              "excludeTemp": false,
+              "ChannelId": "ds-notification-service"
+            },
+            "result": {
+              "TransactionId": "M1VzfRfKEZ5BA5sL"
+            }
+          },
+          {
+            "at": "2026-11-16T03:26:28.018+00:00",
+            "command": "setPointCapabilities",
+            "body": {
+              "minHeatSetpoint": 50,
+              "maxHeatSetpoint": 90,
+              "minCoolSetpoint": 50,
+              "maxCoolSetpoint": 90,
+              "ChannelId": "ds-notification-service"
+            },
+            "result": {
+              "TransactionId": "XG9mDzJqYIqg2bfF"
+            },
+            "confirmation": {
+              "at": "2026-11-16T03:26:29.499+00:00",
+              "change": "setPointCapability",
+              "direction": "AppInitiated",
+              "success": true
+            }
+          }
+        ],
+        "drift": {
+          "pushes_merged_since_read": 3,
+          "shadow": [
+            {
+              "path": "Reported.ZoneAccessories.ZoneAccessories[2].RssiAverage",
+              "held": -48,
+              "cloud": -47
+            }
+          ],
+          "rooms": [
+            {
+              "path": "Rooms[2].Accessories[0].AccessoryValue.Identify",
+              "held": false
+            }
+          ]
+        }
+      },
+      {
+        "shadow": {
+          "DeviceId": "**REDACTED**",
+          "Reported": {
+            "DeviceName": "**REDACTED**",
+            "DataSyncInfo": {
+              "State": "Completed",
+              "TransactionId": "OviKdZ_KTi-Vcf1_"
+            },
+            "SystemSwitch": "Heat",
+            "HeatCoolMode": "Heat",
+            "Setpoint": {
+              "SetpointStatus": "PermanentHold",
+              "HeatSetpoint": 70.0,
+              "CoolSetpoint": 78.0,
+              "FanSwitch": {
+                "Position": "On",
+                "Speed": 1
+              }
+            },
+            "DisplayedIndoorTemperature": 74.0,
+            "DisplayedOutdoorTemperature": 45.0,
+            "DisplayedIndoorHumidity": 30,
+            "DisplayedOutdoorHumidity": 61,
+            "FanSwitch": {
+              "Position": "On",
+              "Speed": 1
+            },
+            "FanReq": 1,
+            "OperationStatus": {
+              "Mode": "EquipmentOff",
+              "FanRequest": false,
+              "CirculationFanRequest": false
+            },
+            "HeatAndCoolDemand": {
+              "CurrentStage": 0,
+              "Demand": 0,
+              "Mode": "Heat",
+              "StagesOn": [
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+              ],
+              "FanRequest": false,
+              "CirculationFanRequest": false
+            },
+            "VacationHold": {
+              "Enabled": false
+            },
+            "VentilationTimer": 0,
+            "FeelsLikeEnabled": true,
+            "ActiveAdaptiveRecoveryMode": "AdaptiveIntelligentRecovery",
+            "IsAdaptiveRecoveryActive": false,
+            "ScheduleEnabled": false,
+            "Online": true,
+            "ThermostatFaults": [],
+            "BackLightState": "Inactive",
+            "CurrentSchedulePeriod": {
+              "Day": "Sunday",
+              "Period": "Sleep"
+            },
+            "ScheduleType": {
+              "ScheduleType": "Timed",
+              "ScheduleSubtype": "NA"
+            },
+            "DemandResponseState": {
+              "EventId": -1,
+              "AffectedDevices": [
+                "Hvac"
+              ],
+              "IsOptOutable": false,
+              "IsLocallyOptOutable": true,
+              "OptedOut": false,
+              "Phases": [],
+              "CurrentDrEventState": "NotStarted"
+            },
+            "CurrentPriorityType": "PickARoom",
+            "VentilationBoostTimer": 0,
+            "CurrentLanguage": "English",
+            "InbuiltSensorState": {
+              "RoomId": 0,
+              "RoomName": "**REDACTED**"
+            },
+            "RegistrationDate": "**REDACTED**",
+            "LastConnectivityStatusChange": "2026-09-29T16:34:32.056+00:00",
+            "AirFilterReminders": {
+              "1": {
+                "RemainingDays": 0,
+                "IsAlertRaised": false
+              }
+            },
+            "FanReqReasons": [
+              "FanSwitch"
+            ],
+            "IndoorAirQuality": {
+              "TotalVolatileOrganicCompounds": {
+                "Status": "Ok",
+                "Quality": "VeryGood"
+              },
+              "EstimatedCarbonDioxide": {
+                "Status": "Ok",
+                "Quality": "VeryGood"
+              },
+              "HumidityQuality": "Dry",
+              "TotalIndoorAirQuality": {
+                "Status": "Ok",
+                "Quality": "Good"
+              }
+            },
+            "FirmwareUpdate": {
+              "JobId": "",
+              "SwPackage": "01.3607.730",
+              "Status": "Success"
+            },
+            "FirmwareSystem": {
+              "SwPackage": "01.3607.730",
+              "ImageStateResponse": {
+                "Status": "Valid",
+                "Reason": "System operating normally"
+              },
+              "LastCheckedResponse": {
+                "Time": "2026-11-15T11:45:29.000+00:00",
+                "Status": "No error"
+              },
+              "LastUpdated": "2026-11-02T18:23:02.000+00:00"
+            },
+            "ZoneData": {
+              "ZoneValues": {},
+              "ZoneAttributes": {},
+              "ZoneSummary": {}
+            },
+            "ZoneAccessories": {
+              "ZoneAccessories": [
+                {
+                  "AccessoryIndex": 0,
+                  "AccessoryType": "Thermostat",
+                  "ConnectionMethod": "WI",
+                  "Name": "**REDACTED**",
+                  "Model": "Unknown OS",
+                  "SerialNumber": "**REDACTED**",
+                  "SoftwareRevision": "01.3607.730",
+                  "HardwareRevision": "DENALI_TSTAT-001",
+                  "RssiAverage": -58
+                }
+              ]
+            },
+            "ThermostatDhwZone": {}
+          },
+          "Desired": {
+            "ZoneData": {
+              "ZoneValues": {},
+              "ZoneAttributes": {},
+              "ZoneSummary": {}
+            },
+            "ZoneAccessories": {
+              "ZoneAccessories": []
+            },
+            "ThermostatDhwZone": {}
+          }
+        },
+        "rooms": {
+          "DeviceId": "**REDACTED**",
+          "GroupId": 0,
+          "GroupName": "**REDACTED**",
+          "Rooms": [
+            {
+              "Id": 0,
+              "Name": "**REDACTED**",
+              "Type": "Other",
+              "OverallMotion": true,
+              "Accessories": [
+                {
+                  "AccessoryId": 0,
+                  "AccessoryAttribute": {
+                    "Type": "Thermostat",
+                    "ConnectionMethod": "WI",
+                    "Name": "**REDACTED**",
+                    "UserChangeEnable": false,
+                    "Model": "Unknown OS",
+                    "SerialNumber": "**REDACTED**",
+                    "SoftwareRevision": "01.3607.730",
+                    "HardwareRevision": "DENALI_TSTAT-001"
+                  },
+                  "AccessoryValue": {
+                    "IndoorHumidity": 30,
+                    "MotionDet": false,
+                    "OccupancyDet": true,
+                    "IndoorTemperature": 74.0,
+                    "ExcludeMotion": false,
+                    "Status": "Ok",
+                    "RssiAverage": -58,
+                    "PollutantLevels": [],
+                    "TotalVolatileOrganicCompounds": {
+                      "Measurement": 26.0,
+                      "Displayed": true
+                    },
+                    "CarbonDioxide": {
+                      "Measurement": 522.0,
+                      "Displayed": true
+                    },
+                    "TemperatureActual": 74.641
+                  }
+                }
+              ],
+              "AvgTemperature": 75.0,
+              "AvgHumidity": 30.0
+            }
+          ]
+        },
+        "configuration": {
+          "DeviceId": "**REDACTED**",
+          "Reported": {
+            "FanSwitchCapabilities": {
+              "Positions": [
+                "On",
+                "Auto",
+                "Circulate"
+              ],
+              "MaxSpeed": 1
+            },
+            "SystemSwitchCapabilities": [
+              "EmergencyHeat",
+              "Heat",
+              "Off",
+              "Cool",
+              "Auto"
+            ],
+            "MinimumCoolSetpointAllowed": 60.0,
+            "MaximumCoolSetpointAllowed": 90.0,
+            "MinimumHeatSetpointAllowed": 50.0,
+            "MaximumHeatSetpointAllowed": 90.0,
+            "SetpointDeadband": 0.0,
+            "CommercialConfiguration": false,
+            "BackLightIntensity": 10,
+            "MaximumBackLightIntensity": 10,
+            "MinimumBackLightIntensity": 0,
+            "AllowedAdaptiveRecoveryModes": [
+              "None",
+              "AdaptiveIntelligentRecovery"
+            ],
+            "TemperatureUnits": "F",
+            "SupportedCapabilities": [
+              "AccessoryValues",
+              "AirFilterTimer",
+              "BackLight",
+              "DehumidificationTimer",
+              "Fan",
+              "FeelsLike",
+              "FaultThresholds",
+              "HumidificationTimer",
+              "Groups",
+              "Matter",
+              "Rooms",
+              "PeriodNames",
+              "AdaptiveIntellegentRecovery",
+              "SensorSchedule",
+              "SetUpConfiguration",
+              "StreamStart",
+              "VentilationBoostTimer",
+              "VentilationTimer",
+              "FreezeProtection",
+              "IndoorAirQuality",
+              "AwayModeOverride",
+              "TemperatureControl",
+              "RemoteChangeAllowedSetpoint",
+              "RemoteChangeActivatableBackLightIntensity",
+              "AutoCapableBackLightIntensity"
+            ],
+            "ScheduleCapabilities": {
+              "AvailableScheduleTypes": [
+                "None",
+                "Geofenced",
+                "GeofencedWithSleep",
+                "TimedNorthAmerica"
+              ],
+              "SchedulableFan": true,
+              "SchedulableSysSwitchOff": false
+            },
+            "AllowedTimeIncrements": 15,
+            "SystemConfiguration": {
+              "HeatingSystem": "CompressorHeat",
+              "HeatingStages": 3,
+              "CoolingSystem": "CompressorCool",
+              "CoolingStages": 2
+            },
+            "MaximumAllowedRoomsPerGroup": 20,
+            "MaximumGroupsPerGroupOfGroupsAllowed": 15,
+            "MaximumAllowedRooms": 20,
+            "MaximumAccessoriesPerRoom": 4,
+            "MaximumAllowedGroups": 1,
+            "HumidityHidden": false,
+            "FreezeProtection": {
+              "Configured": false,
+              "Active": false,
+              "LowLimitDegrees": 0
+            },
+            "TemperatureUnitsWritable": false,
+            "Backlight": {
+              "Active": 10,
+              "Inactive": 10,
+              "RemoteChangeIndication": true,
+              "AutoBacklightLevel": true,
+              "AutoLevel": 5
+            },
+            "BacklightCapability": {
+              "Active": {
+                "Minimum": 1,
+                "Maximum": 10
+              },
+              "Inactive": {
+                "Minimum": 0,
+                "Maximum": 10
+              }
+            },
+            "AirFilterReminders": {
+              "1": {
+                "IsCalendarDays": false,
+                "IsReminderEnabled": false,
+                "RestartDays": 0
+              }
+            },
+            "Matter": {
+              "CommissioningStatus": "Commissioned",
+              "VendorId": 4890,
+              "ProductId": 4352,
+              "CustomFlowFlag": 1,
+              "DiscoveryCapabilitiesBitmask": 4,
+              "DiscriminatorValue": "**REDACTED**",
+              "Fabrics": [
+                {
+                  "VendorId": 4996,
+                  "Label": "**REDACTED**"
+                }
+              ]
+            },
+            "DisplayConfiguration": {
+              "IdleScreenConfiguration": {
+                "MaximumAllowedSetting": 10,
+                "CurrentSetting": 2,
+                "MaximumAllowedColorSetting": 7,
+                "CurrentColorSetting": 11,
+                "MotionTriggerToHomeScreen": true
+              }
+            },
+            "AwayModeOverride": false,
+            "DealerInformation": "**REDACTED**",
+            "FaultThresholds": {
+              "ZoneEnablesTemperature": {},
+              "ZoneEnablesHumidity": {}
+            }
+          },
+          "Desired": {}
+        },
+        "priority": {
+          "DeviceId": "**REDACTED**",
+          "PriorityStatus": "PermanentHold",
+          "Priority": {
+            "PriorityType": "PickARoom",
+            "SelectedRooms": [
+              0
+            ],
+            "Rooms": [
+              {
+                "Id": 0,
+                "Name": "**REDACTED**",
+                "AvgTemperature": 75.0,
+                "AvgHumidity": 30.0,
+                "OverallMotion": true,
+                "Accessories": [
+                  {
+                    "Id": 0,
+                    "SensorType": "Thermostat",
+                    "ExcludeMotion": false,
+                    "Temperature": 74.0,
+                    "Status": "Ok",
+                    "DetectMotion": false
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "pushes": {
+          "DisplayedIndoorHumidity": {
+            "merged_in_memory": true,
+            "count": 1,
+            "first_seen": "2026-11-16T03:25:00.398+00:00",
+            "last_seen": "2026-11-16T03:25:00.398+00:00",
+            "shapes": [
+              {
+                "count": 1,
+                "samples": [
+                  {
+                    "at": "2026-11-16T03:25:00.398+00:00",
+                    "value": {
+                      "Value": 30,
+                      "Sensor": "Ok"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "DisplayedOutdoorHumidity": {
+            "merged_in_memory": true,
+            "count": 1,
+            "first_seen": "2026-11-16T03:26:51.412+00:00",
+            "last_seen": "2026-11-16T03:26:51.412+00:00",
+            "shapes": [
+              {
+                "count": 1,
+                "samples": [
+                  {
+                    "at": "2026-11-16T03:26:51.412+00:00",
+                    "value": {
+                      "Value": 61,
+                      "Sensor": "Ok"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "Rooms": {
+            "merged_in_memory": true,
+            "count": 1,
+            "first_seen": "2026-11-16T03:25:00.468+00:00",
+            "last_seen": "2026-11-16T03:25:00.468+00:00",
+            "shapes": [
+              {
+                "count": 1,
+                "samples": [
+                  {
+                    "at": "2026-11-16T03:25:00.468+00:00",
+                    "value": {
+                      "PropertyName": "0",
+                      "Value": {
+                        "Id": 0,
+                        "Name": "**REDACTED**",
+                        "Type": "Other",
+                        "AccessorySource": [
+                          0
+                        ],
+                        "AvgTemperature": 75,
+                        "AvgHumidity": 30,
+                        "OverallMotion": true
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "Sensor": {
+            "merged_in_memory": true,
+            "count": 2,
+            "first_seen": "2026-11-16T03:24:40.439+00:00",
+            "last_seen": "2026-11-16T03:25:00.422+00:00",
+            "shapes": [
+              {
+                "count": 2,
+                "samples": [
+                  {
+                    "at": "2026-11-16T03:25:00.422+00:00",
+                    "value": {
+                      "RoomId": 0,
+                      "AccessoryId": 0,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "TS",
+                        "ConnectionMethod": "WI",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "Unknown OS",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "01.3607.730",
+                        "HardwareRevision": "DENALI_TSTAT-001"
+                      },
+                      "AccessoryValue": {
+                        "Id": 0,
+                        "IndoorHumidity": 30,
+                        "MotionDet": false,
+                        "OccupancyDet": true,
+                        "IndoorTemperature": 74,
+                        "ExcludeMotion": false,
+                        "Status": "Ok",
+                        "RssiAverage": -58,
+                        "PollutantLevels": [],
+                        "TotalVolatileOrganicCompounds": {
+                          "Measurement": 26
+                        },
+                        "CarbonDioxide": {
+                          "Measurement": 522
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "at": "2026-11-16T03:24:40.439+00:00",
+                    "value": {
+                      "RoomId": 0,
+                      "AccessoryId": 0,
+                      "AccessoryAttribute": {
+                        "Id": 0,
+                        "Type": "TS",
+                        "ConnectionMethod": "WI",
+                        "Name": "**REDACTED**",
+                        "UserChangeEnable": false,
+                        "Model": "Unknown OS",
+                        "SerialNumber": "**REDACTED**",
+                        "SoftwareRevision": "01.3607.730",
+                        "HardwareRevision": "DENALI_TSTAT-001"
+                      },
+                      "AccessoryValue": {
+                        "Id": 0,
+                        "IndoorHumidity": 31,
+                        "MotionDet": false,
+                        "OccupancyDet": true,
+                        "IndoorTemperature": 74,
+                        "ExcludeMotion": false,
+                        "Status": "Ok",
+                        "RssiAverage": -58,
+                        "PollutantLevels": [],
+                        "TotalVolatileOrganicCompounds": {
+                          "Measurement": 24
+                        },
+                        "CarbonDioxide": {
+                          "Measurement": 522
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "writes": [],
+        "drift": {
+          "pushes_merged_since_read": 1,
+          "shadow": [
+            {
+              "path": "Reported.IndoorAirQuality.TotalVolatileOrganicCompounds.Quality",
+              "held": "VeryGood",
+              "cloud": "Good"
+            }
+          ],
+          "rooms": []
+        }
+      }
+    ]
+  }
+}

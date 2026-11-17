@@ -1,0 +1,33 @@
+name: Hardware report
+description: A device, or something a device can do, that is missing in Home Assistant.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: hardware
+    attributes:
+      label: What is installed
+      description: Thermostat model, equipment interface module, each kind of sensor and how many.
+      placeholder: "ElitePRO S1200, equipment interface module, 11 RedLINK room sensors"
+    validations:
+      required: true
+  - type: textarea
+    id: missing
+    attributes:
+      label: What is missing in Home Assistant
+      description: What the Resideo Connect app shows or lets you do that Home Assistant doesn't.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file
+      description: |
+        Resideo's API is undocumented, so support is written from a recording of what your hardware sends. This file is that recording.
+
+        1. Update the integration to the latest release.
+        2. In the **Resideo Connect app**, do what this report is about: change the setting, switch the mode, wait for the sensor to report.
+        3. Settings → Devices & Services → Resideo → ⋮ → **Download diagnostics**, and drag the file here.
+
+        Names, addresses, MAC addresses, serial numbers and tokens are blanked in it; have a look before you attach it all the same.
+    validations:
+      required: true

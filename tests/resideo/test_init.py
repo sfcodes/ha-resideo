@@ -336,7 +336,7 @@ async def test_token_rotation_persisted(
 
     from unittest.mock import patch
 
-    def _capture_resideo(session, *, refresh_token, token_updated_cb):
+    def _capture_resideo(session, *, refresh_token, token_updated_cb, command_cb):
         captured["cb"] = token_updated_cb
         return mock_api
 

@@ -8,6 +8,7 @@ events, connect resyncs, and errors.
 
 from __future__ import annotations
 
+import base64
 import json
 import pathlib
 from copy import deepcopy
@@ -146,6 +147,78 @@ def mock_api(
     api.async_get_priority.side_effect = lambda mac: ResideoPriority(
         {"PriorityStatus": "NoHold", "Priority": {"PriorityType": "PickARoom", "SelectedRooms": []}}
     )
+    fake_writes_and_streams(api)
+    return api
+
+
+def home_api(home: dict[str, Any]) -> AsyncMock:
+    """A Resideo facade mock serving one home's snapshots (see ``tests/homes``).
+
+    A home has no MACs or ids left in it, so each device gets a stand-in MAC and the account
+    graph is rebuilt around them from what the home does keep: every device's model and kind.
+    The thermostats' MACs are left on ``api.macs``, in the order of the home's ``devices``.
+    """
+    data = home["data"]
+    # Homes downloaded before the kinds were kept list their thermostats and nothing else.
+    known = data.get("account_devices") or [
+        {"model": None, "kind": "LyricThermostatDevice", "supported": True}
+    ] * len(data["devices"])
+    macs = [f"AABBCCDDEE{index:02X}" for index in range(len(known))]
+    accounts = {
+        "data": {
+            "countryCode": ((data.get("account") or {}).get("data") or {}).get("countryCode"),
+            "consumerUsers": [
+                {
+                    "consumerAccount": {
+                        "locations": [
+                            {
+                                "id": "location-1",
+                                "name": "Home",
+                                "consumerDevices": [
+                                    {
+                                        "name": f"Device {index}",
+                                        "device": {
+                                            "deviceId": mac,
+                                            "globalDeviceType": device["model"],
+                                            "id": base64.b64encode(
+                                                f"{device['kind']}:{mac}".encode()
+                                            ).decode(),
+                                        },
+                                    }
+                                    for index, (mac, device) in enumerate(
+                                        zip(macs, known, strict=True)
+                                    )
+                                ],
+                            }
+                        ]
+                    }
+                }
+            ],
+        }
+    }
+    thermostats = [mac for mac, device in zip(macs, known, strict=True) if device["supported"]]
+    snapshots = dict(zip(thermostats, data["devices"], strict=True))
+
+    api = AsyncMock(spec=Resideo)
+    api.refresh_token = "refresh-token"
+    api.macs = thermostats
+    api.async_get_accounts.side_effect = lambda: deepcopy(accounts)
+    api.async_get_device.side_effect = lambda mac: ResideoThermostat(
+        deepcopy(snapshots[mac]["shadow"])
+    )
+    api.async_get_rooms.side_effect = lambda mac: ResideoRooms(deepcopy(snapshots[mac]["rooms"]))
+    api.async_get_configuration.side_effect = lambda mac: ResideoConfiguration(
+        deepcopy(snapshots[mac]["configuration"])
+    )
+    api.async_get_priority.side_effect = lambda mac: ResideoPriority(
+        deepcopy(snapshots[mac]["priority"])
+    )
+    fake_writes_and_streams(api)
+    return api
+
+
+def fake_writes_and_streams(api: AsyncMock) -> None:
+    """Accept every write, and hand out :class:`FakeStream` s (kept on ``api.streams``)."""
     for name in WRITE_METHODS:
         getattr(api, name).side_effect = None
         getattr(api, name).return_value = {"TransactionId": "tx-1"}
@@ -159,7 +232,6 @@ def mock_api(
 
     api.create_stream = MagicMock(side_effect=_create_stream)
     api.streams = streams
-    return api
 
 
 @pytest.fixture
@@ -175,12 +247,17 @@ def mock_config_entry() -> MockConfigEntry:
 async def setup_integration(
     hass: HomeAssistant, entry: MockConfigEntry, api: AsyncMock
 ) -> None:
-    """Add + set up the entry with the mocked facade (US units for °F fixture parity)."""
+    """Add + set up the entry with the mocked facade (US units for °F fixture parity).
+
+    The mocked facade sends nothing, so the callback the integration registered for its
+    commands is left on ``api.command_cb`` for a test to report one through.
+    """
     hass.config.units = US_CUSTOMARY_SYSTEM
     entry.add_to_hass(hass)
-    with patch("custom_components.resideo.Resideo", return_value=api):
+    with patch("custom_components.resideo.Resideo", return_value=api) as resideo:
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
+    api.command_cb = resideo.call_args.kwargs["command_cb"]
 
 
 @pytest.fixture

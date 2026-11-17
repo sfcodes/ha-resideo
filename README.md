@@ -238,8 +238,11 @@ logger:
 
 **Download diagnostics.** On the integration (or any device) page: ⋮ → **Download
 diagnostics**. It's the raw device state plus your account's regional settings (country,
-locale, time zone), with tokens, serial numbers, MAC addresses, and anything identifying you
-or your home already scrubbed — perfect for bug reports.
+locale, time zone), with tokens, serial numbers, MAC addresses, room and device names, and
+anything else identifying you or your home already scrubbed — perfect for bug reports. It
+also carries a sample of every live update Resideo has pushed and every command the
+integration has sent since it last loaded. So to show how something behaves, do it first (in
+the Resideo Connect app or in Home Assistant), then download.
 
 **Filing an issue?** Bring receipts: the Home Assistant and integration versions, the
 diagnostics file, and a debug log covering the moment things went sideways.
@@ -333,6 +336,12 @@ pip install ruff -r requirements.txt -r requirements.test.txt
 ruff check .
 pytest   # tests/aioresideo (client) + tests/resideo (HA integration layer)
 ```
+
+Resideo documents none of this API, so every claim about it rests on a recording of what the
+cloud really sent. You don't need a proxy or a rooted phone to make one: the integration
+records its own traffic, and `scripts/evidence.py` turns a diagnostics download into a test
+fixture. [`CONTRIBUTING.md`](CONTRIBUTING.md) walks through it, whether you want to add
+support for your hardware or just hand over the data so someone else can.
 
 The vendored client has its own docs in [`docs/CLIENT.md`](docs/CLIENT.md). The repo doubles
 as a local Home Assistant dev instance under `config/` (gitignored), with

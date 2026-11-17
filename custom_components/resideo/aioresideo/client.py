@@ -17,6 +17,7 @@ import json
 import logging
 import time
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
 
@@ -40,6 +41,7 @@ from .exceptions import (
     ResideoApiError,
     ResideoAuthError,
     ResideoConnectionError,
+    ResideoError,
     ResideoUnavailableError,
     edge_message,
 )
@@ -48,6 +50,22 @@ from .objects.account import ResideoLocation
 # Called with the latest token dict whenever tokens are refreshed/rotated, so the caller
 # (e.g. the HA integration) can persist the new refresh token. May be sync or async.
 TokenUpdatedCallback = Callable[[dict[str, Any]], Awaitable[None] | None]
+
+
+@dataclass(frozen=True)
+class ResideoCommand:
+    """One thermostat command as it went out, and how the cloud answered it."""
+
+    mac: str
+    command: str  # the route under the thermostat endpoint, e.g. ``coolSetpoint``
+    body: dict[str, Any]  # as sent, ``ChannelId`` included
+    result: dict[str, Any] | None = None  # the ``202`` body
+    error: ResideoError | None = None  # set instead of ``result`` when the write failed
+
+
+# Called once per thermostat command, accepted or refused, so the caller can keep a record of
+# what was actually sent (the HA integration puts it in its diagnostics download).
+CommandCallback = Callable[[ResideoCommand], None]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,6 +81,7 @@ class ResideoClient:
         access_token: str | None = None,
         expires_at: float | None = None,
         token_updated_cb: TokenUpdatedCallback | None = None,
+        command_cb: CommandCallback | None = None,
     ) -> None:
         self._session = session
         self._auth = ResideoAuth(session)
@@ -70,6 +89,7 @@ class ResideoClient:
         self._access_token = access_token
         self._expires_at = float(expires_at) if expires_at is not None else 0.0
         self._token_updated_cb = token_updated_cb
+        self._command_cb = command_cb
         # Single-flight guard: Auth0 rotates refresh tokens with reuse detection, so two
         # concurrent refreshes with the same token can revoke the whole grant family.
         self._refresh_lock = asyncio.Lock()
@@ -294,9 +314,18 @@ class ResideoClient:
         """
         payload = {**body, "ChannelId": DEFAULT_CHANNEL_ID}
         _LOGGER.debug("command %s mac=%s body=%s", command, mac, payload)
-        result = await self.put(THERMOSTAT_V1.format(mac=mac) + "/" + command, json=payload)
+        try:
+            result = await self.put(THERMOSTAT_V1.format(mac=mac) + "/" + command, json=payload)
+        except ResideoError as err:
+            self._report_command(ResideoCommand(mac, command, payload, error=err))
+            raise
         _LOGGER.debug("command %s accepted -> %s", command, result)
+        self._report_command(ResideoCommand(mac, command, payload, result=result))
         return result
+
+    def _report_command(self, command: ResideoCommand) -> None:
+        if self._command_cb is not None:
+            self._command_cb(command)
 
     async def set_cool_setpoint(
         self, mac: str, value: float, status: str = SETPOINT_PERMANENT_HOLD
@@ -441,6 +470,10 @@ class ResideoClient:
         that apply in ~10 s (immediate read-back via ``/group/0/rooms``), whereas ``sensitivity``
         is wireless-sensor config that is accepted (``202``) but **deferred** until the battery
         sensor's next check-in (eventually consistent — do not expect an immediate read-back).
+
+        A write of the values already set was accepted and drew no ``ChangeRequest``
+        confirmation within three minutes (``tests/homes/elitepro-s1200-redlink.json``), so
+        the route stays on the uncaptured list in ``tests/aioresideo/test_evidence.py``.
         """
         return await self._command(
             mac,

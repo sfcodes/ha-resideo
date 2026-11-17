@@ -12,7 +12,7 @@ import aiohttp
 import pytest
 from aioresponses import CallbackResult, aioresponses
 
-from custom_components.resideo.aioresideo.client import ResideoClient
+from custom_components.resideo.aioresideo.client import ResideoClient, ResideoCommand
 from custom_components.resideo.aioresideo.const import (
     API_BASE_URL,
     OAUTH_TOKEN_URL,
@@ -87,6 +87,45 @@ async def test_write_carries_channel_id_and_returns_transaction(session) -> None
     assert seen_body["ChannelId"] == "ds-notification-service"
     assert seen_body["SetpointValue"] == 74.0
     assert seen_body["SetpointStatus"] == "PermanentHold"
+
+
+async def test_command_callback_gets_the_body_as_sent_and_the_result(session) -> None:
+    seen: list[ResideoCommand] = []
+    client = _fresh_client(session, command_cb=seen.append)
+
+    with aioresponses() as m:
+        m.put(f"{DEVICE_URL_V1}/coolSetpoint", status=202, payload={"TransactionId": "tx-1"})
+        await client.set_cool_setpoint(MAC, 74)
+
+    (command,) = seen
+    assert command.mac == MAC
+    assert command.command == "coolSetpoint"
+    assert command.body == {
+        "SetpointStatus": "PermanentHold",
+        "SetpointValue": 74.0,
+        "ChannelId": "ds-notification-service",
+    }
+    assert command.result == {"TransactionId": "tx-1"}
+    assert command.error is None
+
+
+async def test_command_callback_gets_a_refused_write_and_the_error_still_raises(session) -> None:
+    """A rejected body is the evidence that matters most, so it is reported, not swallowed."""
+    seen: list[ResideoCommand] = []
+    client = _fresh_client(session, command_cb=seen.append)
+
+    with aioresponses() as m:
+        m.put(f"{DEVICE_URL_V1}/freezeProtection", status=400, payload={"error": "bad value"})
+        with pytest.raises(ResideoApiError):
+            await client.set_freeze_protection(MAC, 41)
+
+    (command,) = seen
+    assert command.command == "freezeProtection"
+    assert command.body["LowLimitDegrees"] == 41
+    assert command.result is None
+    assert isinstance(command.error, ResideoApiError)
+    assert command.error.status == 400
+    assert command.error.body == {"error": "bad value"}
 
 
 async def test_401_refreshes_and_retries_once(session) -> None:

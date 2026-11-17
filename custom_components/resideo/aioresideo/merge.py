@@ -3,7 +3,7 @@
 LiveFeed pushes are **partial deltas** in a **different shape** than the REST shadow (renamed
 keys, different blocks). These functions deepcopy the raw dict(s), patch at the shadow's own key
 paths, and return new dict(s) — **never mutating the inputs**. Only keys present (and non-None)
-in the push are written (**no-clobber**). See ``resideo-api-spec.md`` §9 + the plan's mapping table.
+in the push are written (**no-clobber**). See ``resideo-api-spec.md`` §9.
 
 Merged value-types are exactly :data:`LIVE_FEED_MERGED_PROPERTIES`: ``Setpoint``, ``OperationStatus``,
 ``SystemSwitch``, ``FanSwitch``, ``Sensor``, ``Rooms``, and the
@@ -57,9 +57,9 @@ def _set_if_present(
 def _deep_merge_value(existing: dict[str, Any], push: dict[str, Any]) -> dict[str, Any]:
     """One-level-deep merge of an ``AccessoryValue`` subset.
 
-    Per key: merge nested dicts (so keys the push omits survive — FIX #3), otherwise overwrite.
+    Per key: merge nested dicts (so keys the push omits survive), otherwise overwrite.
     For ``{Measurement, Displayed}`` measurement blocks the push carries only ``Measurement``;
-    keep/default ``Displayed`` to ``True`` so CO2/TVOC don't silently vanish (FIX #4).
+    keep/default ``Displayed`` to ``True`` so CO2/TVOC don't silently vanish.
     """
     out = dict(existing)
     for key, new_val in push.items():

@@ -70,13 +70,13 @@ def test_sensor_builtin_merge(device_shadow, rooms, fixture_loader) -> None:
         device_shadow, rooms, _feed(fixture_loader, "live_sensor_builtin.json")
     )
     ta = ResideoRooms(new_rooms).thermostat_accessory
-    assert ta is not None and ta.is_thermostat  # Type still "Thermostat", not the push's "TS" (FIX #1)
+    assert ta is not None and ta.is_thermostat  # Type still "Thermostat", not the push's "TS"
     assert ta.indoor_temperature == 78
     assert ta.indoor_humidity == 52
     assert ta.rssi == -62
-    assert ta.co2 == 430  # updated + Displayed preserved (FIX #4)
+    assert ta.co2 == 430  # updated + Displayed preserved
     assert ta.tvoc == 2
-    assert ta.temperature_actual == 75.133  # not in the push -> survives (FIX #3)
+    assert ta.temperature_actual == 75.133  # not in the push -> survives
     # The remote sensor is untouched by a thermostat-shaped push.
     _room, remote = ResideoRooms(new_rooms).air_sensor_accessories()[0]
     assert remote.indoor_temperature == 74.0

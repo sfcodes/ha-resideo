@@ -20,7 +20,7 @@ from .auth import (
     decode_jwt_claims,
     parse_authorize_redirect,
 )
-from .client import ResideoClient, TokenUpdatedCallback
+from .client import CommandCallback, ResideoClient, ResideoCommand, TokenUpdatedCallback
 from .exceptions import (
     ResideoApiError,
     ResideoAuthError,
@@ -61,6 +61,7 @@ class Resideo:
         access_token: str | None = None,
         expires_at: float | None = None,
         token_updated_cb: TokenUpdatedCallback | None = None,
+        command_cb: CommandCallback | None = None,
     ) -> None:
         self.client = ResideoClient(
             session,
@@ -68,6 +69,7 @@ class Resideo:
             access_token=access_token,
             expires_at=expires_at,
             token_updated_cb=token_updated_cb,
+            command_cb=command_cb,
         )
 
     @property
@@ -200,6 +202,7 @@ class Resideo:
 __all__ = [
     "LIVE_FEED_MERGED_PROPERTIES",
     "AuthorizeRequest",
+    "CommandCallback",
     "ConnectedCallback",
     "ErrorCallback",
     "EventCallback",
@@ -212,6 +215,7 @@ __all__ = [
     "ResideoBaseObject",
     "ResideoChangeConfirm",
     "ResideoClient",
+    "ResideoCommand",
     "ResideoConfiguration",
     "ResideoConnectionError",
     "ResideoError",

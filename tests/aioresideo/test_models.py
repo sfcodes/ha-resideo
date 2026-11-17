@@ -46,7 +46,7 @@ def test_thermostat_shadow(device_shadow: dict) -> None:
     assert t.feels_like_enabled is True
     assert t.ventilation_timer == 0
     assert t.serial_number == "000000000000"
-    assert t.registration_date == "2026-06-12T01:23:24.129+00:00"
+    assert t.registration_date == "2026-01-01T00:00:00.000+00:00"
     assert t.firmware_last_updated == "2026-06-12T01:29:18.000+00:00"
 
 

@@ -14,3 +14,8 @@ venv/
 
 # local HA dev instance (config, state, db, logs)
 config/
+
+# diagnostics downloaded into the repo root, by hand or by scripts/evidence.py fetch
+# (file a keeper with add-home instead)
+/*.json
+!/hacs.json

@@ -17,7 +17,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["custom_components", "tests"]
+known-first-party = ["custom_components", "scripts", "tests"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

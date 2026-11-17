@@ -115,11 +115,11 @@
       "ProductId": 4352,
       "CustomFlowFlag": 1,
       "DiscoveryCapabilitiesBitmask": 4,
-      "DiscriminatorValue": 1464,
+      "DiscriminatorValue": 1234,
       "Fabrics": [
         {
           "VendorId": 4937,
-          "Label": "2335 Boston"
+          "Label": "My Home"
         },
         {
           "VendorId": 4996,

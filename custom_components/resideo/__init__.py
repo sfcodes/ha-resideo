@@ -21,6 +21,7 @@ from .aioresideo.exceptions import (
     ResideoError,
 )
 from .availability import async_clear_unavailable
+from .capture import ResideoCapture
 from .const import CONF_REFRESH_TOKEN, DOMAIN, PLATFORMS
 from .coordinator import ResideoConfigEntry, ResideoDataUpdateCoordinator
 from .entity import thermostat_device_info
@@ -41,13 +42,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ResideoConfigEntry) -> b
             data={**entry.data, CONF_REFRESH_TOKEN: tokens["refresh_token"]},
         )
 
+    capture = ResideoCapture()
     api = Resideo(
         session,
         refresh_token=entry.data[CONF_REFRESH_TOKEN],
         token_updated_cb=_token_updated,
+        command_cb=capture.record_command,
     )
 
-    coordinator = ResideoDataUpdateCoordinator(hass, entry, api)
+    coordinator = ResideoDataUpdateCoordinator(hass, entry, api, capture)
 
     # Bootstrap read — capabilities + the initial snapshot can't come from the stream.
     try:

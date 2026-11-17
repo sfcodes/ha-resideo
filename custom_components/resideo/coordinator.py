@@ -51,6 +51,7 @@ from .availability import (
     async_report_unavailable,
     unavailable_reason,
 )
+from .capture import ResideoCapture
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         hass: HomeAssistant,
         config_entry: ResideoConfigEntry,
         api: Resideo,
+        capture: ResideoCapture,
     ) -> None:
         super().__init__(
             hass,
@@ -95,6 +97,8 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
             update_interval=None,  # push-only — no periodic poll
         )
         self.api = api
+        # What the cloud pushed and how it answered our writes, for the diagnostics download.
+        self.capture = capture
         self._macs: list[str] = []
         self._targets: list[ResideoLocation] = []
         # The account's country, read once at setup. It decides the unit of the outdoor
@@ -147,15 +151,16 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
                 )
                 raise ConfigEntryError(
                     f"No supported thermostats in this Resideo account — found: {found}. "
-                    "This integration reads thermostats on the platform the First Alert app uses; "
-                    "a thermostat that only appears in the older Resideo app (formerly Honeywell "
-                    "Home) is on a separate Resideo system it cannot reach."
+                    "This integration reads thermostats on the platform the Resideo Connect app "
+                    "(formerly First Alert) uses; a thermostat that only appears in the older "
+                    "Resideo - Smart Home app (formerly Honeywell Home) is on a separate Resideo "
+                    "system it cannot reach."
                 )
             raise ConfigEntryError(
                 "No devices found in this Resideo account. If your thermostat only appears in the "
-                "older Resideo app (formerly Honeywell Home), it is on a separate Resideo system "
-                "this integration cannot reach — use Home Assistant's built-in Lyric integration "
-                "for those."
+                "older Resideo - Smart Home app (formerly Honeywell Home), it is on a separate "
+                "Resideo system this integration cannot reach — use Home Assistant's built-in "
+                "Lyric integration for those."
             )
         _LOGGER.debug(
             "Discovered %d thermostat(s) %s across %d location(s), account country %s",
@@ -182,7 +187,8 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         unavailable: ResideoUnavailableError | None = None
         for mac in self._macs:
             try:
-                result[mac] = await self._async_read_device(mac)
+                result[mac] = await self.async_read_device(mac)
+                self.capture.record_read(mac)
             except ResideoAuthError as err:
                 raise ConfigEntryAuthFailed(str(err)) from err
             except (ResideoConnectionError, ResideoError) as err:
@@ -208,7 +214,7 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
         async_clear_unavailable(self.hass, self.config_entry)
         return result
 
-    async def _async_read_device(self, mac: str) -> ResideoDeviceData:
+    async def async_read_device(self, mac: str) -> ResideoDeviceData:
         """Read one thermostat's full snapshot.
 
         Rooms / configuration / priority are best-effort: a stripped-down thermostat may 404
@@ -390,6 +396,7 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
     def _on_stream_event(self, event: ResideoLiveFeed | ResideoChangeConfirm) -> None:
         """Apply one SignalR event to the cached data (called on the loop from the recv loop)."""
         if isinstance(event, ResideoChangeConfirm):
+            self.capture.record_change(event)
             if not event.success:
                 # The cloud accepted (202) but the device/service rejected the change — the
                 # optimistic UI value will be rolled back by the reconcile refresh.
@@ -407,10 +414,14 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
             # ChangeRequest and carry NO values -> re-read the shadow to reflect them (spec §9a/§9.1).
             self.schedule_resync()
             return
-        if not isinstance(event, ResideoLiveFeed) or not self.data:
+        if not isinstance(event, ResideoLiveFeed):
             return
         # The raw push is the evidence in most bug reports (the cloud's shapes are reverse-
-        # engineered — e.g. every Sensor push is labelled with the thermostat's ids).
+        # engineered — e.g. every Sensor push is labelled with the thermostat's ids), so it is
+        # both sampled for diagnostics and logged, merged or not.
+        self.capture.record_push(event)
+        if not self.data:
+            return
         _LOGGER.debug("LiveFeed %s %s: %s", event.device_id, event.property_name, event.value)
         current = self.data.get(event.device_id)
         if current is None:
@@ -429,6 +440,7 @@ class ResideoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, ResideoDevice
             configuration=current.configuration,
             priority=current.priority,
         )
+        self.capture.record_merge(event.device_id)
         # Pushes the new data AND clears any prior error state -> entities available again.
         self.async_set_updated_data({**self.data, event.device_id: updated})
 

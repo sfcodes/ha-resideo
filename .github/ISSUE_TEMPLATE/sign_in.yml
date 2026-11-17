@@ -1,0 +1,50 @@
+name: Can't sign in
+description: Setup or re-authentication fails.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The usual causes and their fixes are in the README under [If setup doesn't work](https://github.com/sfcodes/ha-resideo#if-setup-doesnt-work). If none of them fits, these answers are what tells the remaining causes apart.
+  - type: dropdown
+    id: method
+    attributes:
+      label: Which way of signing in failed
+      multiple: true
+      options:
+        - Email and password
+        - Sign in with your browser
+        - Paste a refresh token
+    validations:
+      required: true
+  - type: textarea
+    id: message
+    attributes:
+      label: The message Home Assistant showed
+      description: "Copy its text or attach a screenshot. It has a detail in it, such as `credentials: invalid_captcha`, that says where the sign-in stopped."
+    validations:
+      required: true
+  - type: dropdown
+    id: app
+    attributes:
+      label: Which app this login works in
+      options:
+        - Resideo Connect (called First Alert until October 2026)
+        - Resideo - Smart Home (the older app)
+        - Both
+        - Neither, or not tried
+    validations:
+      required: true
+  - type: input
+    id: country
+    attributes:
+      label: Country
+      description: Resideo Connect is only offered in some countries.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Integration version
+      description: Shown in HACS, and as "version" in custom_components/resideo/manifest.json.
+    validations:
+      required: true

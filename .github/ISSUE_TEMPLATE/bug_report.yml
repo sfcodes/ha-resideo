@@ -1,0 +1,25 @@
+name: Bug report
+description: Something the integration does wrong.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what you saw. If the Resideo Connect app showed something different at that moment, say what.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file
+      description: |
+        1. Update the integration to the latest release.
+        2. Make the problem happen. The file records the live updates and commands since the integration last loaded, so a download from before the problem doesn't show it.
+        3. Settings → Devices & Services → Resideo → ⋮ → **Download diagnostics**, and drag the file here.
+
+        The file carries the integration and Home Assistant versions. Names, addresses, MAC addresses, serial numbers and tokens are blanked in it; have a look before you attach it all the same.
+
+        If the integration won't load there is nothing to download: paste the error shown on its card instead.
+    validations:
+      required: true
