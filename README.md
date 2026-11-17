@@ -44,6 +44,7 @@ Entities only appear when your hardware actually supports them — no dead tiles
 | Entity | Type | Notes |
 | --- | --- | --- |
 | Thermostat | `climate` | Current temperature & humidity; heat / cool / off (+ auto where supported); target temperature or range; fan **Auto / Circulate / On**; presets **None / Temporary hold / Permanent hold** |
+| Priority mode & Room priority | `select`, `switch`, `sensor` | Switch between **PickARoom** and **FollowMe**, toggle individual rooms in/out of temperature averaging, and view active priority rooms |
 | Indoor / Outdoor temperature | `sensor` | Shown in your Home Assistant unit system (°F/°C) |
 | Indoor / Outdoor humidity | `sensor` | |
 | Carbon dioxide, VOC | `sensor` | Air-quality models only |
@@ -77,6 +78,7 @@ Vacation hold, Freeze protection, Away mode, and Commercial mode binary sensors.
 | Temperature, Humidity | `sensor` | Per-room readings the thermostat averages |
 | Carbon dioxide, VOC | `sensor` | Air-quality sensor models only |
 | Motion, Occupancy | `binary_sensor` | |
+| Room priority | `switch` | Include or exclude this room from active thermostat priority averaging (`SelectedRooms`) |
 | Exclude motion / Exclude temperature | `switch` | Drop this room from occupancy/averaging |
 | Occupancy sensitivity | `select` | Takes effect at the sensor's next check-in (battery life comes first) |
 | Battery, Signal strength, Status | `sensor` | Diagnostic |

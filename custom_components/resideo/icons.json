@@ -42,6 +42,7 @@
       "temperature_units": { "default": "mdi:temperature-fahrenheit" },
       "matter_status": { "default": "mdi:home-automation" },
       "priority_status": { "default": "mdi:home-thermometer" },
+      "selected_priority_rooms": { "default": "mdi:floor-plan" },
       "occupancy_timeout": { "default": "mdi:timer-outline" }
     },
     "binary_sensor": {
@@ -57,10 +58,13 @@
       "schedule": { "default": "mdi:calendar-check" },
       "emergency_heat": { "default": "mdi:radiator" },
       "exclude_motion": { "default": "mdi:motion-sensor-off" },
-      "exclude_temperature": { "default": "mdi:thermometer-off" }
+      "exclude_temperature": { "default": "mdi:thermometer-off" },
+      "room_priority": { "default": "mdi:home-thermometer" },
+      "thermostat_room_priority": { "default": "mdi:home-thermometer" }
     },
     "select": {
-      "occupancy_sensitivity": { "default": "mdi:motion-sensor" }
+      "occupancy_sensitivity": { "default": "mdi:motion-sensor" },
+      "priority_mode": { "default": "mdi:home-thermometer-outline" }
     },
     "number": {
       "freeze_protection_low_limit": { "default": "mdi:snowflake-thermometer" },
