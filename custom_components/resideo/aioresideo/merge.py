@@ -229,6 +229,19 @@ def _apply_displayed(
         _reported(shadow)[key] = v
 
 
+def _apply_duct_temperature(
+    shadow: dict[str, Any], rooms: dict[str, Any], value: dict[str, Any]
+) -> None:
+    """Merge a ``DuctTemperature`` LiveFeed push into ``Reported.DuctTemperature``."""
+    duct = _reported(shadow).setdefault("DuctTemperature", {})
+    inner = value.get("Value") if isinstance(value.get("Value"), dict) else value
+    if isinstance(inner, dict):
+        _set_if_present(duct, "DischargeTemperature", inner, "DischargeTemperature")
+        _set_if_present(duct, "DischargeTemperature", inner, "DischargeTemp")
+        _set_if_present(duct, "ReturnTemperature", inner, "ReturnTemperature")
+        _set_if_present(duct, "ReturnTemperature", inner, "ReturnTemp")
+
+
 # -- dispatch (the authoritative set of merged property types) -----------------
 _DISPATCH = {
     "Setpoint": _apply_setpoint,
@@ -237,6 +250,7 @@ _DISPATCH = {
     "FanSwitch": _apply_fan_switch,
     "Sensor": _apply_sensor,
     "Rooms": _apply_rooms,
+    "DuctTemperature": _apply_duct_temperature,
     "DisplayedIndoorTemperature": partial(_apply_displayed, key="DisplayedIndoorTemperature"),
     "DisplayedIndoorHumidity": partial(_apply_displayed, key="DisplayedIndoorHumidity"),
     "DisplayedOutdoorTemperature": partial(_apply_displayed, key="DisplayedOutdoorTemperature"),

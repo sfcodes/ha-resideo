@@ -1,6 +1,9 @@
 {
   "entity": {
     "sensor": {
+      "discharge_temperature": { "default": "mdi:thermometer-chevron-up" },
+      "return_temperature": { "default": "mdi:thermometer-chevron-down" },
+      "duct_temperature_delta": { "default": "mdi:thermometer-lines" },
       "indoor_humidity": { "default": "mdi:water-percent" },
       "outdoor_humidity": { "default": "mdi:water-percent" },
       "tvoc": { "default": "mdi:molecule" },
@@ -42,9 +45,26 @@
       "temperature_units": { "default": "mdi:temperature-fahrenheit" },
       "matter_status": { "default": "mdi:home-automation" },
       "priority_status": { "default": "mdi:home-thermometer" },
+      "thermostat_local_temperature": { "default": "mdi:thermometer" },
+      "thermostat_temperature_actual": { "default": "mdi:thermometer-high" },
+      "thermostat_local_humidity": { "default": "mdi:water-percent" },
+      "eim_status": { "default": "mdi:expansion-card" },
+      "active_demand_mode": { "default": "mdi:hvac" },
+      "active_stages": { "default": "mdi:layers" },
+      "air_filter_restart_days": { "default": "mdi:air-filter" },
+      "backlight_intensity": { "default": "mdi:brightness-6" },
+      "fault_temp_high_threshold": { "default": "mdi:thermometer-alert" },
+      "fault_temp_low_threshold": { "default": "mdi:thermometer-alert" },
+      "fault_humidity_high_threshold": { "default": "mdi:water-alert" },
+      "fault_humidity_low_threshold": { "default": "mdi:water-alert" },
+      "last_connectivity_change": { "default": "mdi:wifi-clock" },
       "occupancy_timeout": { "default": "mdi:timer-outline" }
     },
     "binary_sensor": {
+      "stage_1_active": { "default": "mdi:numeric-1-circle" },
+      "stage_2_active": { "default": "mdi:numeric-2-circle" },
+      "stage_3_active": { "default": "mdi:numeric-3-circle" },
+      "stage_4_active": { "default": "mdi:numeric-4-circle" },
       "vacation_hold": { "default": "mdi:airplane" },
       "freeze_protection": { "default": "mdi:snowflake-alert" },
       "freeze_protection_configured": { "default": "mdi:snowflake-check" },

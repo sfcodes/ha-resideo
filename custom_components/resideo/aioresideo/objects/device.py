@@ -127,6 +127,26 @@ class ResideoThermostat(ResideoBaseObject):
     def outdoor_humidity(self) -> int | None:
         return self.reported.get("DisplayedOutdoorHumidity")
 
+    @property
+    def discharge_temperature(self) -> float | None:
+        return self._as_float(self._r("DuctTemperature", "DischargeTemperature"))
+
+    @property
+    def return_temperature(self) -> float | None:
+        return self._as_float(self._r("DuctTemperature", "ReturnTemperature"))
+
+    @property
+    def duct_temperature_delta(self) -> float | None:
+        dis = self.discharge_temperature
+        ret = self.return_temperature
+        if dis is not None and ret is not None:
+            return round(dis - ret, 3)
+        return None
+
+    @property
+    def last_connectivity_change(self) -> str | None:
+        return self.reported.get("LastConnectivityStatusChange")
+
     # -- setpoints / fan / hold ----------------------------------------------
     @property
     def setpoint(self) -> dict[str, Any]:
@@ -263,6 +283,16 @@ class ResideoThermostat(ResideoBaseObject):
     def fan_request_reasons(self) -> list[str]:
         """Why the fan is being requested, e.g. ['HeatingOrCoolingStagesOn']."""
         return self.reported.get("FanReqReasons", []) or []
+
+    @property
+    def stages_on(self) -> list[bool]:
+        """Per-stage on/off flags (HeatAndCoolDemand.StagesOn)."""
+        return self._r("HeatAndCoolDemand", "StagesOn", default=[]) or []
+
+    @property
+    def active_demand_mode(self) -> str | None:
+        """HeatAndCoolDemand.Mode (the mode the equipment is actively demanding)."""
+        return self._r("HeatAndCoolDemand", "Mode")
 
     @property
     def stages_on(self) -> list[bool]:

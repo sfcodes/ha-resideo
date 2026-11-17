@@ -44,8 +44,10 @@ Entities only appear when your hardware actually supports them — no dead tiles
 | Entity | Type | Notes |
 | --- | --- | --- |
 | Thermostat | `climate` | Current temperature & humidity; heat / cool / off (+ auto where supported); target temperature or range; fan **Auto / Circulate / On**; presets **None / Temporary hold / Permanent hold** |
-| Indoor / Outdoor temperature | `sensor` | Shown in your Home Assistant unit system (°F/°C) |
-| Indoor / Outdoor humidity | `sensor` | |
+| Indoor / Outdoor temperature | `sensor` | Shown in your Home Assistant unit system (°F/°C), plus local wall-unit temperature & high-precision thermistor reading |
+| Indoor / Outdoor humidity | `sensor` | Plus local wall-unit humidity |
+| Discharge / Return duct temperature & ΔT | `sensor` | Exposed when EIM supply/return duct probes are wired (`DuctTemperature`) |
+| Active HVAC stages (1–4) | `binary_sensor`, `sensor` | Individual stage relay binary sensors (`StagesOn[0..3]`) and active demand mode | |
 | Carbon dioxide, VOC | `sensor` | Air-quality models only |
 | Connectivity | `binary_sensor` | Reports **Disconnected** when the thermostat drops offline |
 | Fan, Circulation fan | `binary_sensor` | Whether air is moving, and why |
@@ -59,14 +61,15 @@ Entities only appear when your hardware actually supports them — no dead tiles
 | Freeze protection floor | `number` | A 35–45 °F "pipes shall not freeze" floor |
 
 <details>
-<summary>The nerd drawer: ~45 diagnostic entities, if you're into that</summary>
+<summary>The nerd drawer: ~55+ diagnostic entities, if you're into that</summary>
 
-Heat/Cool setpoint, Hold status, Equipment status, Demand, Current stage, Air / CO2 / VOC /
-Humidity quality, Schedule period / day / type, Backlight, Room priority, Air filter remaining,
+Heat/Cool setpoint, Hold status, Equipment status, EIM status, Demand, Current stage, Active stages,
+Air / CO2 / VOC / Humidity quality, Schedule period / day / type, Backlight & backlight intensity,
+Room priority, Air filter remaining & filter life, High/Low temperature and humidity alert thresholds,
 Firmware (+ status, last updated), Faults, Signal strength, Heat/cool mode, Fan reason, Demand
 response, Adaptive recovery mode, Ventilation & ventilation-boost timers, Language, Registered,
-Heating/Cooling system & stages, Temperature units, Matter status, Priority status — plus
-Vacation hold, Freeze protection, Away mode, and Commercial mode binary sensors.
+Last connectivity change, Heating/Cooling system & stages, Temperature units, Matter status,
+Priority status — plus Vacation hold, Freeze protection, Away mode, and Commercial mode binary sensors.
 
 </details>
 
