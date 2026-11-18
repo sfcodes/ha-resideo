@@ -44,6 +44,8 @@ Entities only appear when your hardware actually supports them — no dead tiles
 | Entity | Type | Notes |
 | --- | --- | --- |
 | Thermostat | `climate` | Current temperature & humidity; heat / cool / off (+ auto where supported); target temperature or range; fan **Auto / Circulate / On**; presets **None / Temporary hold / Permanent hold** |
+| Humidifier / Dehumidifier | `number`, `binary_sensor`, `sensor` | Writable target setpoint sliders, live running states, deadband, away dehumidification, and window condensation protection |
+| Fan mode | `select` | Standalone fan mode selector (**Auto / Circulate / On**) for quick access outside the climate card |
 | Indoor / Outdoor temperature | `sensor` | Shown in your Home Assistant unit system (°F/°C) |
 | Indoor / Outdoor humidity | `sensor` | |
 | Carbon dioxide, VOC | `sensor` | Air-quality models only |

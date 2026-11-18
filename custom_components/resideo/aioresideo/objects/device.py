@@ -127,6 +127,45 @@ class ResideoThermostat(ResideoBaseObject):
     def outdoor_humidity(self) -> int | None:
         return self.reported.get("DisplayedOutdoorHumidity")
 
+    @property
+    def humidifier_setpoint(self) -> int | None:
+        return self.reported.get("HumidifierSetpoint")
+
+    @property
+    def dehumidifier_setpoint(self) -> int | None:
+        return self.reported.get("DehumidifierSetpoint")
+
+    @property
+    def humidifier_running(self) -> bool | None:
+        val = self.reported.get("HumidifierRequest")
+        return bool(val) if val is not None else None
+
+    @property
+    def dehumidifier_running(self) -> bool | None:
+        val = self.reported.get("DehumidifierRequest")
+        return bool(val) if val is not None else None
+
+    @property
+    def windows_protection(self) -> int | None:
+        return self.reported.get("WindowsProtection")
+
+    @property
+    def windows_protection_percentage(self) -> float | None:
+        return self._as_float(self.reported.get("WindowsProtectionPercentage"))
+
+    @property
+    def dehum_away_active(self) -> bool | None:
+        val = self._r("DehumAway", "Active")
+        return bool(val) if val is not None else None
+
+    @property
+    def dehum_away_setpoint(self) -> int | None:
+        return self._r("DehumAway", "DehumSetPoint")
+
+    @property
+    def dehum_away_cool_setpoint(self) -> float | None:
+        return self._as_float(self._r("DehumAway", "CoolSetPoint"))
+
     # -- setpoints / fan / hold ----------------------------------------------
     @property
     def setpoint(self) -> dict[str, Any]:

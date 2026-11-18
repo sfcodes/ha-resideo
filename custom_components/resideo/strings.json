@@ -140,6 +140,10 @@
       "battery_status": { "name": "Battery" },
       "heat_setpoint": { "name": "Heat setpoint" },
       "cool_setpoint": { "name": "Cool setpoint" },
+      "humidifier_setpoint": { "name": "Humidifier setpoint" },
+      "dehumidifier_setpoint": { "name": "Dehumidifier setpoint" },
+      "windows_protection": { "name": "Windows protection" },
+      "windows_protection_percentage": { "name": "Windows protection percentage" },
       "setpoint_status": { "name": "Hold status" },
       "equipment_status": { "name": "Equipment status" },
       "demand": { "name": "Demand" },
@@ -175,11 +179,17 @@
       "temperature_units": { "name": "Temperature units" },
       "matter_status": { "name": "Matter status" },
       "priority_status": { "name": "Priority status" },
+      "dehum_away_setpoint": { "name": "Dehumidifier away setpoint" },
+      "dehum_away_cool_setpoint": { "name": "Dehumidifier away cool setpoint" },
+      "humidifier_deadband": { "name": "Humidifier deadband" },
       "occupancy_timeout": { "name": "Occupancy timeout" }
     },
     "binary_sensor": {
       "fan_running": { "name": "Fan" },
       "circulation_fan": { "name": "Circulation fan" },
+      "humidifier_running": { "name": "Humidifier" },
+      "dehumidifier_running": { "name": "Dehumidifier" },
+      "dehum_away_active": { "name": "Dehumidification away active" },
       "adaptive_recovery_active": { "name": "Adaptive recovery active" },
       "vacation_hold": { "name": "Vacation hold" },
       "air_filter": { "name": "Air filter" },
@@ -198,9 +208,12 @@
       "exclude_temperature": { "name": "Exclude temperature" }
     },
     "select": {
-      "occupancy_sensitivity": { "name": "Occupancy sensitivity" }
+      "occupancy_sensitivity": { "name": "Occupancy sensitivity" },
+      "fan_mode": { "name": "Fan mode" }
     },
     "number": {
+      "humidifier_setpoint": { "name": "Humidifier setpoint" },
+      "dehumidifier_setpoint": { "name": "Dehumidifier setpoint" },
       "freeze_protection_low_limit": { "name": "Freeze protection floor" },
       "heat_setpoint_min": { "name": "Heat setpoint minimum" },
       "heat_setpoint_max": { "name": "Heat setpoint maximum" },

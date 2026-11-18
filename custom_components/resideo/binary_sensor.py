@@ -76,6 +76,24 @@ DEVICE_BINARY_SENSORS: tuple[ResideoBinarySensorEntityDescription, ...] = (
         value_fn=lambda d: d.thermostat.circulation_fan_request,
     ),
     ResideoBinarySensorEntityDescription(
+        key="humidifier_running", translation_key="humidifier_running",
+        device_class=BinarySensorDeviceClass.RUNNING,
+        value_fn=lambda d: d.thermostat.humidifier_running,
+        exists_fn=lambda d: d.thermostat.humidifier_running is not None,
+    ),
+    ResideoBinarySensorEntityDescription(
+        key="dehumidifier_running", translation_key="dehumidifier_running",
+        device_class=BinarySensorDeviceClass.RUNNING,
+        value_fn=lambda d: d.thermostat.dehumidifier_running,
+        exists_fn=lambda d: d.thermostat.dehumidifier_running is not None,
+    ),
+    ResideoBinarySensorEntityDescription(
+        key="dehum_away_active", translation_key="dehum_away_active",
+        entity_category=DIAG,
+        value_fn=lambda d: d.thermostat.dehum_away_active,
+        exists_fn=lambda d: d.thermostat.dehum_away_active is not None,
+    ),
+    ResideoBinarySensorEntityDescription(
         key="adaptive_recovery_active", translation_key="adaptive_recovery_active",
         device_class=BinarySensorDeviceClass.RUNNING, entity_category=DIAG,
         value_fn=lambda d: d.thermostat.adaptive_recovery_active,
