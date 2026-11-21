@@ -190,6 +190,48 @@ def test_sensor_remote_push_is_dropped_when_unattributable(
     assert r3 == two
 
 
+def test_sensor_pushes_with_eim_index_into_remotes(
+    device_shadow, rooms, fixture_loader
+) -> None:
+    """With an EIM (AccessoryId 1 in Room 0), remotes start at AccessoryId 2. Cloud Sensor pushes
+    still stamp header AccessoryId 0 for the 1st remote, 1 (EIM) for the 2nd remote, etc."""
+    eim_rooms = _with_second_remote(rooms)
+    eim_rooms["Rooms"][0]["Accessories"].append(
+        {
+            "AccessoryId": 1,
+            "AccessoryAttribute": {"Type": "EquipmentInterfaceModule", "Model": "4353", "Name": "Other"},
+            "AccessoryValue": {"Status": "Ok"},
+        }
+    )
+    for idx, room in enumerate(eim_rooms["Rooms"][1:], start=2):
+        room["Accessories"][0]["AccessoryId"] = idx
+
+    feed = _feed(fixture_loader, "live_sensor_remote.json")
+    # header AccessoryId 0 -> 1st remote (AccessoryId 2)
+    _s, r1 = apply_live_feed(device_shadow, eim_rooms, feed)
+    # header AccessoryId 1 (EIM) -> 2nd remote (AccessoryId 3)
+    push_second = ResideoLiveFeed(
+        "AABBCCDDEEFF",
+        "Sensor",
+        {
+            "RoomId": 0,
+            "AccessoryId": 1,
+            "AccessoryAttribute": {"Id": 0, "Type": "EI", "Name": "Other"},
+            "AccessoryValue": {
+                "Id": 1, "IndoorTemperature": 66, "IndoorHumidity": 39,
+                "OccupancyDet": False, "MotionDet": False, "BatteryStatus": "Ok",
+                "RssiAverage": -61, "Status": "Ok",
+            },
+        },
+        None,
+    )
+    _s, r2 = apply_live_feed(device_shadow, r1, push_second)
+    (_, first), (_, second) = ResideoRooms(r2).air_sensor_accessories()
+    assert first.accessory_id == 2 and first.indoor_temperature == 70
+    assert second.accessory_id == 3 and second.indoor_temperature == 66
+    assert ResideoRooms(r2).thermostat_accessory.indoor_temperature == 76.0
+
+
 def test_co2_first_time_via_push(device_shadow, rooms, fixture_loader) -> None:
     """CO2 with no prior REST block (push carries only {Measurement}) still surfaces."""
     stripped = copy.deepcopy(rooms)
@@ -228,6 +270,59 @@ def test_displayed_outdoor_temperature_merge(device_shadow, rooms, fixture_loade
         device_shadow, rooms, _feed(fixture_loader, "live_displayed_outdoor_temperature.json")
     )
     assert ResideoThermostat(shadow).outdoor_temperature == 90  # only delivered via push; was 82.0
+
+
+def test_sensor_eim_header_drops_when_no_second_remote(device_shadow, rooms) -> None:
+    """When an EIM (AccessoryId 1) sits between the thermostat (0) and a single remote (2),
+    header AccessoryId 1 is the 2nd remote's slot (index 1) and is dropped if only 1 remote exists,
+    while header AccessoryId 0 + BatteryStatus routes to the 1st remote (AccessoryId 2)."""
+    with_eim = copy.deepcopy(rooms)
+    with_eim["Rooms"][0]["Accessories"].append(
+        {
+            "AccessoryId": 1,
+            "AccessoryAttribute": {"Type": "EquipmentInterfaceModule", "Model": "4353"},
+            "AccessoryValue": {"Status": "Ok"},
+        }
+    )
+    with_eim["Rooms"][1]["Accessories"][0]["AccessoryId"] = 2
+    eim_header_push = ResideoLiveFeed(
+        "AABBCCDDEEFF",
+        "Sensor",
+        {
+            "RoomId": 0,
+            "AccessoryId": 1,
+            "AccessoryAttribute": {"Id": 0, "Type": "EI", "Name": "Other"},
+            "AccessoryValue": {
+                "Id": 0,
+                "IndoorTemperature": 71.0,
+                "IndoorHumidity": 52,
+                "OccupancyDet": True,
+                "MotionDet": False,
+                "BatteryStatus": "Ok",
+                "RssiAverage": -48,
+                "Status": "Ok",
+            },
+        },
+        None,
+    )
+    _s, new_rooms = apply_live_feed(device_shadow, with_eim, eim_header_push)
+    rr = ResideoRooms(new_rooms)
+    _room, remote = rr.air_sensor_accessories()[0]
+    assert remote.accessory_id == 2
+    assert remote.indoor_temperature == 74.0  # untouched by out-of-range index 1
+
+    ts_header_push = ResideoLiveFeed(
+        "AABBCCDDEEFF",
+        "Sensor",
+        {**eim_header_push.value, "AccessoryId": 0},
+        None,
+    )
+    _s, new_rooms2 = apply_live_feed(device_shadow, with_eim, ts_header_push)
+    _room, remote2 = ResideoRooms(new_rooms2).air_sensor_accessories()[0]
+    assert remote2.accessory_id == 2
+    assert remote2.indoor_temperature == 71.0
+    assert remote2.occupancy is True
+    assert remote2.motion is False
 
 
 def test_merged_properties_set_matches_dispatch() -> None:

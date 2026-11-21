@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from functools import partial
-from itertools import pairwise
 from typing import Any
 
 from .objects.events import ResideoLiveFeed
@@ -132,24 +131,17 @@ def _accessory_type(acc: dict[str, Any]) -> str | None:
 def _sensor_push_target(rooms: dict[str, Any], value: dict[str, Any]) -> dict[str, Any] | None:
     """Resolve which cached accessory a ``Sensor`` push's ``AccessoryValue`` belongs to.
 
-    The cloud's ``Sensor`` notifications are **off by one**: each push's header (``RoomId`` /
-    ``AccessoryId`` / ``AccessoryAttribute`` — type, name, serial) describes the accessory *before*
-    the one whose ``AccessoryValue`` it carries. Verified live against REST with two remotes::
-
-        header acc 0 (thermostat) + thermostat payload (CO2/VOC)  -> acc 0, the thermostat itself
-        header acc 0 (thermostat) + remote payload (BatteryStatus) -> acc 1, the first remote
-        header acc 1 (first remote, its real serial)               -> acc 2, the second remote
-
-    With a single remote this is indistinguishable from "every push is labelled as the
-    thermostat" (captured 9/9 in 2026-06 and again 2026-08-20). Trusting the header merged the
-    remote's reading — and its ``OccupancyDet`` — into the thermostat's slot, so the thermostat's
-    values and occupancy flapped with every burst, while the remote never received a push at all.
+    The cloud's ``Sensor`` notifications have a header-lookup bug for remote sensors: each remote
+    push's ``AccessoryId`` is the 0-based index into the ``IndoorAirSensor`` list, rather than the
+    owning sensor's ``AccessoryId`` (and the header metadata/``AccessoryAttribute`` is fetched from
+    ``accessories[idx]``). Without an EIM (``[0: TS, 1: Remote0, 2: Remote1]``) that looks like a
+    +1 shift (``0 -> 1``, ``1 -> 2``); with an EIM (``[0: TS, 1: EIM, 2: Remote0, 3: Remote1]``)
+    it shifts by +2 (``0 -> 2``, ``1 -> 3``).
 
     Routing: a payload without ``BatteryStatus`` is the wall-powered thermostat's (only the
-    battery remotes carry one); a remote payload belongs to the accessory *after* the header's in
-    ``AccessoryId`` order. The target's cached ``Type`` must agree with the payload shape — if the
-    header is unknown, has no successor, or the successor isn't a remote, the push is dropped
-    rather than guessed (the REST resync covers it).
+    battery remotes carry one); a remote payload's ``AccessoryId`` indexes directly into the
+    ``IndoorAirSensor`` list sorted by ``AccessoryId``. Out-of-range headers are dropped rather than
+    guessed (the REST resync covers them).
     """
     push_av = value.get("AccessoryValue")
     if not isinstance(push_av, dict):
@@ -166,10 +158,10 @@ def _sensor_push_target(rooms: dict[str, Any], value: dict[str, Any]) -> dict[st
     if "BatteryStatus" not in push_av:
         thermostats = [acc for acc in accessories if _accessory_type(acc) == "Thermostat"]
         return thermostats[0] if len(thermostats) == 1 else None
+    remotes = [acc for acc in accessories if _accessory_type(acc) == "IndoorAirSensor"]
     header_id = value.get("AccessoryId")
-    for header, successor in pairwise(accessories):
-        if header["AccessoryId"] == header_id:
-            return successor if _accessory_type(successor) == "IndoorAirSensor" else None
+    if isinstance(header_id, int) and not isinstance(header_id, bool) and 0 <= header_id < len(remotes):
+        return remotes[header_id]
     return None
 
 
