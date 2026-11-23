@@ -12,8 +12,25 @@ from .base import ResideoBaseObject
 
 # Places whose local weather is reported in Fahrenheit: the US and its territories, plus the
 # handful of countries that still use it. See ``outdoor_temperature_unit``.
+# Canada is additionally included based on the newer Fahrenheit observation in issue #26.
 FAHRENHEIT_COUNTRIES = frozenset(
-    {"US", "PR", "GU", "VI", "AS", "MP", "UM", "BS", "BZ", "KY", "LR", "PW", "FM", "MH"}
+    {
+        "US",
+        "CA",
+        "PR",
+        "GU",
+        "VI",
+        "AS",
+        "MP",
+        "UM",
+        "BS",
+        "BZ",
+        "KY",
+        "LR",
+        "PW",
+        "FM",
+        "MH",
+    }
 )
 
 
@@ -26,6 +43,11 @@ def outdoor_temperature_unit(country_code: str | None) -> str:
     thermostat's ``TemperatureUnits`` nor the account ``locale`` (GitHub issue #7: a Canadian
     account with locale ``en_US`` and a °C thermostat gets °C outdoor; issue #2: a °C thermostat
     on a US account got °F). An unknown country keeps the historical °F assumption.
+
+    Issue #26 reports a Canadian outdoor value in °F, unlike the earlier Canadian °C observation.
+    That newer report is why CA is explicitly included in ``FAHRENHEIT_COUNTRIES``. The historical
+    °F default applies when ``countryCode`` is absent; an unrecognized non-empty code still uses
+    °C.
     """
     if country_code is None:
         return "F"

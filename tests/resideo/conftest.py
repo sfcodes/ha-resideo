@@ -20,7 +20,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
-from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+from homeassistant.util.unit_system import UnitSystem, US_CUSTOMARY_SYSTEM
 from pytest_homeassistant.common import (
     MockConfigEntry,
     async_fire_time_changed,
@@ -245,14 +245,18 @@ def mock_config_entry() -> MockConfigEntry:
 
 
 async def setup_integration(
-    hass: HomeAssistant, entry: MockConfigEntry, api: AsyncMock
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    api: AsyncMock,
+    *,
+    unit_system: UnitSystem = US_CUSTOMARY_SYSTEM,
 ) -> None:
-    """Add + set up the entry with the mocked facade (US units for °F fixture parity).
+    """Add + set up the entry with the mocked facade (US units by default for fixture parity).
 
     The mocked facade sends nothing, so the callback the integration registered for its
     commands is left on ``api.command_cb`` for a test to report one through.
     """
-    hass.config.units = US_CUSTOMARY_SYSTEM
+    hass.config.units = unit_system
     entry.add_to_hass(hass)
     with patch("custom_components.resideo.Resideo", return_value=api) as resideo:
         assert await hass.config_entries.async_setup(entry.entry_id)
