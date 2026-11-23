@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import pytest
+
 from homeassistant.core import HomeAssistant
+from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from .conftest import MAC, eid, setup_integration
 
@@ -53,19 +56,26 @@ async def test_celsius_faceplate_still_reports_fahrenheit(
     assert climate.attributes["current_temperature"] == 76.0
 
 
-async def test_outdoor_temperature_is_fahrenheit_for_canadian_accounts(
+async def test_outdoor_temperature_converts_to_celsius_for_canadian_accounts(
     hass: HomeAssistant, mock_config_entry, mock_api, accounts_data
 ) -> None:
-    """The weather feed reports outdoor temperature in °F for Canadian accounts (#26)."""
+    """Canadian outdoor input is °F; Home Assistant displays °C in metric mode (#26)."""
     accounts_data["data"]["countryCode"] = "CA"
-    await setup_integration(hass, mock_config_entry, mock_api)
+    await setup_integration(
+        hass,
+        mock_config_entry,
+        mock_api,
+        unit_system=METRIC_SYSTEM,
+    )
 
     outdoor = hass.states.get(eid(hass, "sensor", f"{MAC}_outdoor_temperature"))
-    assert outdoor.attributes["unit_of_measurement"] == "°F"  # US-customary HA display
-    assert float(outdoor.state) == 82.0  # captured native °F value, shown as-is
-    # Indoor is still °F on the wire, whatever the country.
+    assert outdoor.attributes["unit_of_measurement"] == "°C"
+    # Captured 82 °F input, converted by Home Assistant.
+    assert float(outdoor.state) == pytest.approx(27.8, abs=0.05)
+    # Indoor is still °F on the wire, whatever the country; HA converts it as usual.
     indoor = hass.states.get(eid(hass, "sensor", f"{MAC}_indoor_temperature"))
-    assert float(indoor.state) == 76.0
+    assert indoor.attributes["unit_of_measurement"] == "°C"
+    assert float(indoor.state) == pytest.approx(24.4, abs=0.05)
 
 
 async def test_outdoor_temperature_is_fahrenheit_for_us_accounts(
