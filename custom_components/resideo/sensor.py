@@ -87,6 +87,8 @@ DEVICE_SENSORS: tuple[ResideoSensorEntityDescription, ...] = (
     # Temperature payloads are always °F regardless of the device's display unit (see
     # ResideoConfiguration.temperature_units) — HA converts for display. Outdoor temperature is
     # the exception: it arrives in the account country's local unit (issue #7).
+    # Issue #26 reports a Canadian outdoor value in °F, so CA is explicitly included in the
+    # Fahrenheit mapping despite the earlier Canadian °C observation.
     ResideoSensorEntityDescription(
         key="indoor_temperature", translation_key="indoor_temperature",
         device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT,
